@@ -328,7 +328,7 @@ export function CaseRunner({ test, categories }: { test: HatsTest; categories: H
         style={{ gridTemplateColumns: `${leftWidth}px 4px 1fr`, gridTemplateRows: '1fr' }}
       >
         {/* Left pane: test metadata and expectations */}
-        <aside className="flex h-full min-w-0 flex-col border-r border-border bg-card">
+        <aside className="flex min-h-0 flex-col border-r border-border bg-card">
           {contentsOpen ? (
             <HatsContents
               categories={categories}
@@ -405,7 +405,7 @@ export function CaseRunner({ test, categories }: { test: HatsTest; categories: H
                 </div>
               </div>
 
-              <div className="sticky bottom-0 z-10 border-t border-border bg-card/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+              <div className="border-t border-border bg-card/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-card/80">
                 <Button
                   variant="outline"
                   size="sm"

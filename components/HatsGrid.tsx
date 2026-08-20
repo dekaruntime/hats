@@ -28,9 +28,11 @@ function TestLink({ test }: { test: HatsTestWithBuildResult }) {
     >
       <span className={`size-2.5 rounded-sm ${statusColor(test.overallStatus)}`} />
       <span className="truncate">{test.title}</span>
-      <span className="ml-auto text-[10px] text-muted-foreground">
-        {test.overallStatus === 'pass' ? 'both' : test.overallStatus === 'fail' ? 'both fail' : 'drift'}
-      </span>
+      {test.overallStatus !== 'pass' && (
+        <span className="ml-auto text-[10px] text-muted-foreground">
+          {test.overallStatus === 'fail' ? 'fail' : 'drift'}
+        </span>
+      )}
     </Link>
   )
 }
@@ -70,7 +72,7 @@ export function HatsGrid({ categories, nativeAvailable }: HatsGridProps) {
   const divergent = allTests.filter((t) => t.overallStatus === 'divergent').length
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex h-screen bg-background text-foreground">
       {/* Contents sidebar */}
       <aside className="flex w-64 flex-col border-r border-border">
         <div className="border-b border-border p-4">
