@@ -72,6 +72,9 @@ export function runNativeCli(
 
   fs.writeFileSync(inputPath, source)
 
+  // Ensure bun/node treat the emitted JS as an ES module, matching how wasm runs it.
+  fs.writeFileSync(path.join(tmpDir, 'package.json'), JSON.stringify({ type: 'module' }))
+
   let transpileOk = false
   let transpileError = ''
 
