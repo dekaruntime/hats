@@ -65,6 +65,30 @@ Build a static export:
 bun run build
 ```
 
+### Helper scripts
+
+Run one-off snippets against the live wasm compiler:
+
+```bash
+printf 'console.log("hello")\n' | bun scripts/quick-test.mjs
+```
+
+Dump the full build-time conformance report locally:
+
+```bash
+bun scripts/dump-results.mjs
+```
+
+Generate/regenerate the snapshot-style test fixtures from the definitions in `scripts/generate-tests.mjs`:
+
+```bash
+bun scripts/generate-tests.mjs
+```
+
+## Native-vs-wasm drift detection
+
+HATS can compare the wasm compiler against the matching native CLI downloaded from `releases.deka.gg`. On Cloudflare Workers Builds the linux-x64 binary currently fails with a `GLIBC_2.43` mismatch, so native drift detection is disabled in that environment and the site falls back to wasm-only results. See [dekaruntime/hats#1](https://github.com/dekaruntime/hats/issues/1).
+
 ## Deployment
 
 The site deploys via Cloudflare Workers Builds automatically on every push to `main`.
