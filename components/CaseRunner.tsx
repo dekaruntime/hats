@@ -128,7 +128,17 @@ export function CaseRunner({ test, categories }: { test: HatsTest; categories: H
       setOutput((prev) => ({ ...prev, error: undefined }))
 
       try {
-        const compileResult = await compileDeka(currentSource, `${test.slug}.ds`)
+        // Normalize the source with the formatter before compiling so that
+        // expected-code comparisons always use the canonical formatted shape,
+        // even for tests that fail at parse/typecheck.
+        const dsFormatResult = await formatDekaDs(currentSource)
+        const sourceToCompile =
+          dsFormatResult.ok && dsFormatResult.code ? dsFormatResult.code : currentSource
+        if (sourceToCompile !== currentSource) {
+          setSource(sourceToCompile)
+        }
+
+        const compileResult = await compileDeka(sourceToCompile, `${test.slug}.ds`)
         if (!isCurrentSource()) return
 
         if (!compileResult.ok || !compileResult.js) {
@@ -150,12 +160,6 @@ export function CaseRunner({ test, categories }: { test: HatsTest; categories: H
             error: compileResult.error || 'Compilation failed with no error message.',
           })
           return
-        }
-
-        // Option A: only format source when the compiler has accepted it.
-        const dsFormatResult = await formatDekaDs(currentSource)
-        if (dsFormatResult.ok && dsFormatResult.code && dsFormatResult.code !== currentSource) {
-          setSource(dsFormatResult.code)
         }
 
         const strippedJs = formatRawJs(compileResult.js)
