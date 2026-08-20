@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { loadWasmCompiler, compileWithWasm, formatDsWithWasm } from './build-wasm'
 import { prepareNativeCli, runNativeCli } from './build-native'
-import { runDekaJsDirect } from './compiler/runtime'
+import { runDekaJsDirect } from '@dekaruntime/web-ide-kit/runtime'
 import { loadAllTests, type HatsCategory, type HatsTest, type HatsTestStage } from './tests'
 
 export type RuntimeStatus = 'pass' | 'fail'

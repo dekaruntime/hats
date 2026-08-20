@@ -1,0 +1,3 @@
+[submodule "vendor/web-ide-kit"]
+	path = vendor/web-ide-kit
+	url = https://github.com/dekaruntime/web-ide-kit.git

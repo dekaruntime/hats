@@ -3,22 +3,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, CheckCircle2, List, XCircle, ArrowRight } from 'lucide-react'
-import { EditorPanel } from './EditorPanel'
 import { HatsContents } from './HatsContents'
-import { TourOutputPanel } from './TourOutputPanel'
 import { ResizableSplitter } from './ResizableSplitter'
 import { Button } from '@/components/ui/button'
+import { EditorPanel, TourOutputPanel } from '@dekaruntime/web-ide-kit/ui'
 import {
   compileDeka,
   runDekaJs,
   formatDekaDs,
   formatDekaJs,
   formatRawJs,
+  setCompilerArtifactPath,
   type CompilerDiagnostic,
-} from '@/lib/compiler/runtime'
-import { terminateSharedSandbox } from '@/lib/compiler/sandbox'
+} from '@dekaruntime/web-ide-kit/runtime'
+import { terminateSharedSandbox } from '@dekaruntime/web-ide-kit/runtime'
+import { setLspWorkerPath } from '@dekaruntime/web-ide-kit/editor'
 import type { HatsTest } from '@/lib/tests'
 import type { HatsCategoryWithResults } from '@/lib/build-tests'
+
+setCompilerArtifactPath('https://wasm.deka.gg/latest/deka-compiler-artifact.json')
+setLspWorkerPath('/deka-diagnostics-worker.js')
 
 interface RunResult {
   ok: boolean
@@ -475,11 +479,13 @@ export function CaseRunner({ test, categories }: { test: HatsTest; categories: H
             <EditorPanel
               source={source}
               filename={`${test.slug}.ds`}
+              documentUriPrefix="inmemory://deka-hats/"
               onChange={handleSourceChange}
               onRun={executeRun}
               isRunning={isRunning}
               compiler={compileState.compiler}
               formatOnKeystroke={false}
+              formatOnRun={false}
             />
           </div>
 
@@ -496,6 +502,8 @@ export function CaseRunner({ test, categories }: { test: HatsTest; categories: H
               displayJs={compileState.displayJs}
               compileError={compileState.error}
               isCompiling={compileState.isCompiling}
+              storageNamespace="deka.hats"
+              ariaLabel="Test output views"
             />
           </div>
         </div>

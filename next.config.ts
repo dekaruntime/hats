@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  transpilePackages: ['@dekaruntime/web-ide-kit'],
 };
 
 export default nextConfig;
