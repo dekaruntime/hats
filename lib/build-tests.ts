@@ -164,10 +164,11 @@ export interface HatsBuildResults {
 
 export async function loadAndRunAllTests(): Promise<HatsBuildResults> {
   globalHatsCompiler = await loadWasmCompiler()
-  const wasmVersion = (await (await fetch('https://wasm.deka.gg/latest/deka-compiler-artifact.json')).json()) as {
+  const wasmManifest = (await (await fetch('https://wasm.deka.gg/latest/deka-compiler-artifact.json')).json()) as {
     compiler: { version: string }
   }
-  const nativeCliPath = await prepareNativeCli(wasmVersion.compiler.version)
+  console.log(`[hats build] wasm compiler version=${wasmManifest.compiler.version}`)
+  const nativeCliPath = await prepareNativeCli(wasmManifest.compiler.version)
 
   const categories = loadAllTests()
 
