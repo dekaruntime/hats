@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "bun scripts/dump-results.mjs && next build",
-    "deploy": "bunx wrangler pages deploy dist --project-name deka-test-suite --branch main",
+    "deploy": "wrangler deploy",
     "start": "next start",
     "lint": "eslint"
   },
