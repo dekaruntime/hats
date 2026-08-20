@@ -156,13 +156,14 @@ function emptyNativeResult(): RuntimeResult {
 }
 
 let globalHatsCompiler: Awaited<ReturnType<typeof loadWasmCompiler>>
+let loadAndRunPromise: Promise<HatsBuildResults> | null = null
 
 export interface HatsBuildResults {
   nativeAvailable: boolean
   categories: HatsCategoryWithResults[]
 }
 
-export async function loadAndRunAllTests(): Promise<HatsBuildResults> {
+async function runAllTestsOnce(): Promise<HatsBuildResults> {
   globalHatsCompiler = await loadWasmCompiler()
   const wasmManifest = (await (await fetch('https://wasm.deka.gg/latest/deka-compiler-artifact.json')).json()) as {
     compiler: { version: string }
@@ -199,4 +200,11 @@ export async function loadAndRunAllTests(): Promise<HatsBuildResults> {
   }
 
   return { nativeAvailable, categories: results }
+}
+
+export async function loadAndRunAllTests(): Promise<HatsBuildResults> {
+  if (!loadAndRunPromise) {
+    loadAndRunPromise = runAllTestsOnce()
+  }
+  return loadAndRunPromise
 }
