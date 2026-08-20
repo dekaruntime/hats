@@ -54,7 +54,7 @@ export function HatsGrid({ categories, nativeAvailable }: HatsGridProps) {
   const visibleCount = filteredCategories.flatMap((c) => c.tests).length
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <div className="flex h-screen flex-col bg-background text-foreground">
       <header className="flex items-center justify-between border-b border-border px-6 py-3">
         <div className="flex items-center gap-3">
           <img
@@ -81,7 +81,7 @@ export function HatsGrid({ categories, nativeAvailable }: HatsGridProps) {
         </div>
       </header>
 
-      <main className="flex-1 overflow-auto p-6">
+      <main className="flex-1 p-6">
         {normalizedQuery !== '' && (
           <p className="mb-3 text-xs text-muted-foreground">
             {visibleCount} of {total} tests shown

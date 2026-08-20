@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { execSync } from 'child_process'
 import os from 'os'
-import { runDekaJsDirect } from './compiler/runtime'
+import { runDekaJsDirect } from '@dekaruntime/web-ide-kit/runtime'
 
 const RELEASES_BASE = 'https://releases.deka.gg'
 
