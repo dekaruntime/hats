@@ -333,6 +333,7 @@ export function formatRawJs(jsCode: string): string {
     /^export const \w+ = /.test(trimmed) ||
     /^globalThis\./.test(trimmed) ||
     /^const __DekaUnsafeGlobals=/.test(trimmed) ||
+    /^const __deka=/.test(trimmed) ||
     /^const deka=/.test(trimmed) ||
     /^const jsx = globalThis\.jsx;\s*$/.test(trimmed) ||
     /^const jsxs = globalThis\.jsxs;\s*$/.test(trimmed) ||
@@ -357,6 +358,7 @@ export function formatRawJs(jsCode: string): string {
         if (
           /^globalThis\./.test(trimmed) ||
           /^const __DekaUnsafeGlobals=/.test(trimmed) ||
+          /^const __deka=/.test(trimmed) ||
           /^const deka=/.test(trimmed)
         ) {
           skippingMultiLine = true;
