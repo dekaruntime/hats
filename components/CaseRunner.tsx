@@ -2,19 +2,22 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle2, XCircle } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, List, XCircle } from 'lucide-react'
 import { EditorPanel } from './EditorPanel'
+import { HatsContents } from './HatsContents'
 import { TourOutputPanel } from './TourOutputPanel'
 import { ResizableSplitter } from './ResizableSplitter'
+import { Button } from '@/components/ui/button'
 import {
   compileDeka,
   runDekaJs,
+  formatDekaDs,
   formatDekaJs,
   formatRawJs,
   type CompilerDiagnostic,
 } from '@/lib/compiler/runtime'
 import { terminateSharedSandbox } from '@/lib/compiler/sandbox'
-import type { HatsTest } from '@/lib/tests'
+import type { HatsCategory, HatsTest } from '@/lib/tests'
 
 interface RunResult {
   ok: boolean
@@ -70,8 +73,9 @@ function matchesExpectation(test: HatsTest, result: RunResult, stage: 'parse' | 
   return true
 }
 
-export function CaseRunner({ test }: { test: HatsTest }) {
+export function CaseRunner({ test, categories }: { test: HatsTest; categories: HatsCategory[] }) {
   const [source, setSource] = useState(test.source)
+  const [contentsOpen, setContentsOpen] = useState(false)
   const [isRunning, setIsRunning] = useState(false)
   const [output, setOutput] = useState<{ stdout: string; stderr: string; error?: string }>({
     stdout: '',
@@ -146,6 +150,12 @@ export function CaseRunner({ test }: { test: HatsTest }) {
             error: compileResult.error || 'Compilation failed with no error message.',
           })
           return
+        }
+
+        // Option A: only format source when the compiler has accepted it.
+        const dsFormatResult = await formatDekaDs(currentSource)
+        if (dsFormatResult.ok && dsFormatResult.code && dsFormatResult.code !== currentSource) {
+          setSource(dsFormatResult.code)
         }
 
         const strippedJs = formatRawJs(compileResult.js)
@@ -319,72 +329,95 @@ export function CaseRunner({ test }: { test: HatsTest }) {
       >
         {/* Left pane: test metadata and expectations */}
         <aside className="flex h-full min-w-0 flex-col border-r border-border bg-card">
-          <div className="flex-1 space-y-4 overflow-auto p-4">
-            {compileState.isCompiling ? null : (
-              <div
-                className={`rounded-lg border p-3 ${
-                  expectationMet
-                    ? 'border-green-500/50 bg-green-500/10'
-                    : 'border-red-500/50 bg-red-500/10'
-                }`}
-              >
-                <div className="flex items-center gap-2 text-sm font-semibold">
-                  {expectationMet ? (
-                    <>
-                      <CheckCircle2 className="size-4 text-green-600 dark:text-green-400" />
-                      <span>Matches expectation</span>
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="size-4 text-red-600 dark:text-red-400" />
-                      <span>Does not match</span>
-                    </>
-                  )}
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  Got {result.ok ? 'pass' : 'fail'} at {stage}
+          {contentsOpen ? (
+            <HatsContents
+              categories={categories}
+              currentSlug={test.slug}
+              onSelect={() => setContentsOpen(false)}
+              onClose={() => setContentsOpen(false)}
+            />
+          ) : (
+            <>
+              <div className="flex-1 space-y-4 overflow-auto p-4">
+                {compileState.isCompiling ? null : (
+                  <div
+                    className={`rounded-lg border p-3 ${
+                      expectationMet
+                        ? 'border-green-500/50 bg-green-500/10'
+                        : 'border-red-500/50 bg-red-500/10'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 text-sm font-semibold">
+                      {expectationMet ? (
+                        <>
+                          <CheckCircle2 className="size-4 text-green-600 dark:text-green-400" />
+                          <span>Matches expectation</span>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="size-4 text-red-600 dark:text-red-400" />
+                          <span>Does not match</span>
+                        </>
+                      )}
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Got {result.ok ? 'pass' : 'fail'} at {stage}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Expected</h2>
+                  <dl className="space-y-2 text-sm">
+                    <div className="flex gap-2">
+                      <dt className="text-muted-foreground">Status:</dt>
+                      <dd className="font-medium">{test.status}</dd>
+                    </div>
+                    <div className="flex gap-2">
+                      <dt className="text-muted-foreground">Stage:</dt>
+                      <dd className="font-medium">{test.stage}</dd>
+                    </div>
+                    {test.expectedStdout !== undefined && (
+                      <div className="flex flex-col gap-1">
+                        <dt className="text-muted-foreground">Stdout:</dt>
+                        <dd className="rounded bg-muted p-2 font-mono text-xs whitespace-pre-wrap">{test.expectedStdout}</dd>
+                      </div>
+                    )}
+                    {test.expectedCode !== undefined && (
+                      <div className="flex flex-col gap-1">
+                        <dt className="text-muted-foreground">Formatted code:</dt>
+                        <dd className="rounded bg-muted p-2 font-mono text-xs whitespace-pre-wrap">{test.expectedCode}</dd>
+                      </div>
+                    )}
+                    {test.expectedDiagnosticContains && (
+                      <div className="flex flex-col gap-1">
+                        <dt className="text-muted-foreground">Diagnostic contains:</dt>
+                        <dd className="rounded bg-muted p-2 font-mono text-xs">{test.expectedDiagnosticContains}</dd>
+                      </div>
+                    )}
+                    {test.notes && (
+                      <div className="flex flex-col gap-1">
+                        <dt className="text-muted-foreground">Notes:</dt>
+                        <dd className="text-muted-foreground">{test.notes}</dd>
+                      </div>
+                    )}
+                  </dl>
                 </div>
               </div>
-            )}
 
-            <div>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Expected</h2>
-              <dl className="space-y-2 text-sm">
-                <div className="flex gap-2">
-                  <dt className="text-muted-foreground">Status:</dt>
-                  <dd className="font-medium">{test.status}</dd>
-                </div>
-                <div className="flex gap-2">
-                  <dt className="text-muted-foreground">Stage:</dt>
-                  <dd className="font-medium">{test.stage}</dd>
-                </div>
-                {test.expectedStdout !== undefined && (
-                  <div className="flex flex-col gap-1">
-                    <dt className="text-muted-foreground">Stdout:</dt>
-                    <dd className="rounded bg-muted p-2 font-mono text-xs whitespace-pre-wrap">{test.expectedStdout}</dd>
-                  </div>
-                )}
-                {test.expectedCode !== undefined && (
-                  <div className="flex flex-col gap-1">
-                    <dt className="text-muted-foreground">Formatted code:</dt>
-                    <dd className="rounded bg-muted p-2 font-mono text-xs whitespace-pre-wrap">{test.expectedCode}</dd>
-                  </div>
-                )}
-                {test.expectedDiagnosticContains && (
-                  <div className="flex flex-col gap-1">
-                    <dt className="text-muted-foreground">Diagnostic contains:</dt>
-                    <dd className="rounded bg-muted p-2 font-mono text-xs">{test.expectedDiagnosticContains}</dd>
-                  </div>
-                )}
-                {test.notes && (
-                  <div className="flex flex-col gap-1">
-                    <dt className="text-muted-foreground">Notes:</dt>
-                    <dd className="text-muted-foreground">{test.notes}</dd>
-                  </div>
-                )}
-              </dl>
-            </div>
-          </div>
+              <div className="sticky bottom-0 z-10 border-t border-border bg-card/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setContentsOpen(true)}
+                  className="w-full gap-1.5"
+                >
+                  <List className="h-4 w-4" />
+                  Contents
+                </Button>
+              </div>
+            </>
+          )}
         </aside>
 
         <ResizableSplitter direction="vertical" onResize={handleLeftResize} />
@@ -405,7 +438,7 @@ export function CaseRunner({ test }: { test: HatsTest }) {
               onRun={executeRun}
               isRunning={isRunning}
               compiler={compileState.compiler}
-              formatOnKeystroke
+              formatOnKeystroke={false}
             />
           </div>
 

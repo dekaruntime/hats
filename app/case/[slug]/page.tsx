@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { loadTestBySlug, getAllSlugs } from '@/lib/tests'
+import { loadTestBySlug, getAllSlugs, loadAllTests } from '@/lib/tests'
 import { CaseRunner } from '@/components/CaseRunner'
 
 interface CasePageProps {
@@ -18,5 +18,7 @@ export default async function CasePage({ params }: CasePageProps) {
     notFound()
   }
 
-  return <CaseRunner test={test} />
+  const categories = loadAllTests()
+
+  return <CaseRunner test={test} categories={categories} />
 }
