@@ -491,6 +491,7 @@ export function CaseRunner({ test, categories }: { test: HatsTest; categories: H
               stderr={output.stderr}
               error={output.error}
               diagnostics={compileState.diagnostics}
+              source={source}
               onClear={handleClear}
               displayJs={compileState.displayJs}
               compileError={compileState.error}

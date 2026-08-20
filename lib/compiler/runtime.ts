@@ -17,6 +17,8 @@ export interface CompilerDiagnostic {
   endLine?: number;
   endColumn?: number;
   help?: string;
+  /** Pre-formatted diagnostic text produced by the runtime's formatter. */
+  rendered?: string;
 }
 
 export interface CompileResult {
@@ -86,6 +88,7 @@ export function normalizeDiagnostics(value: unknown): CompilerDiagnostic[] {
       endLine: typeof raw.endLine === 'number' ? raw.endLine : typeof raw.end_line === 'number' ? raw.end_line : undefined,
       endColumn: typeof raw.endColumn === 'number' ? raw.endColumn : typeof raw.end_column === 'number' ? raw.end_column : undefined,
       help: typeof raw.help === 'string' ? raw.help : undefined,
+      rendered: typeof raw.rendered === 'string' ? raw.rendered : undefined,
     }];
   });
 }
@@ -320,7 +323,25 @@ function stripModuleMetadata(jsCode: string): string {
  * compiler. Everything after that boundary is kept, including struct-method
  * registrations and any top-level wrapper.
  */
+const RAW_USER_CODE_MARKER = '// --- deka:user-code ---';
+
+/**
+ * Strip the demand-driven runtime prelude from emitted JS so the RAW panel can
+ * show just the transpiled user code.
+ *
+ * Modern compilers emit a stable boundary marker (`// --- deka:user-code ---`)
+ * between the prelude and the user program. When that marker is present we
+ * split on it directly. Older compilers (and any prelude variants that predate
+ * the marker) fall back to the heuristic pattern matcher.
+ */
 export function formatRawJs(jsCode: string): string {
+  const markerIndex = jsCode.indexOf(RAW_USER_CODE_MARKER);
+  if (markerIndex !== -1) {
+    const afterMarker = jsCode.slice(markerIndex + RAW_USER_CODE_MARKER.length);
+    const trimmed = afterMarker.replace(/^\n+/, '');
+    return trimmed.replace(/\n+$/, '');
+  }
+
   const lines = jsCode.split('\n');
   const kept: string[] = [];
   let foundUserCode = false;
