@@ -8,7 +8,7 @@ on:
 
 jobs:
   native-drift:
-    runs-on: [self-hosted, macos, arm64]
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
