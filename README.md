@@ -67,9 +67,14 @@ bun run build
 
 ## Deployment
 
-The site deploys to Cloudflare Pages automatically on every push to `main`.
+The site deploys via Cloudflare Workers Builds automatically on every push to `main`.
 
-Required GitHub secrets:
+Dashboard settings:
 
-- `CLOUDFLARE_ACCOUNT_ID`
-- `CLOUDFLARE_PAGES_TOKEN`
+| Setting | Value |
+|---|---|
+| Build command | `bun run build` |
+| Deploy command | `npx wrangler deploy --assets dist` |
+| Root directory | `/` |
+
+`next.config.ts` uses `output: 'export'` and `distDir: 'dist'`, so the build produces a static `dist/` folder. Wrangler uploads that folder as static assets with no Worker code.
