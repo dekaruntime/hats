@@ -1,0 +1,5 @@
+{
+  "title": "Return statement outside a function fails",
+  "stage": "run",
+  "notes": ""
+}

@@ -1,0 +1,5 @@
+const x = "hello"
+match (x) {
+  "a" => 1,
+  _ => 2
+}

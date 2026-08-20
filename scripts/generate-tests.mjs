@@ -775,6 +775,260 @@ console.log(x)
   title: 'Type mismatch in binding fails',
 })
 
+// --- second wave: edge-case fail tests ---
+
+add('basics', 'redeclare_const_fail', {
+  status: 'fail',
+  source: `const x = 1
+const x = 2
+console.log(x)
+`,
+  title: 'Redeclaring a const binding fails',
+})
+
+add('basics', 'use_before_declaration_fail', {
+  status: 'fail',
+  source: `console.log(x)
+const x = 1
+`,
+  title: 'Using a variable before declaration fails',
+})
+
+add('basics', 'mutate_frozen_object_fail', {
+  status: 'fail',
+  source: `const obj = { a: 1 }
+obj.a = 2
+`,
+  title: 'Mutating a frozen object fails',
+})
+
+add('functions', 'duplicate_parameter_fail', {
+  status: 'fail',
+  source: `fn add(x: number, x: number): number {
+  return x + x
+}
+console.log(add(1, 2))
+`,
+  title: 'Duplicate parameter names fail',
+})
+
+add('functions', 'return_outside_function_fail', {
+  status: 'fail',
+  source: `return 1
+`,
+  title: 'Return statement outside a function fails',
+})
+
+add('functions', 'missing_return_fail', {
+  status: 'fail',
+  source: `fn answer(): number {
+  const x = 42
+}
+console.log(answer())
+`,
+  title: 'Missing return for a non-void function fails',
+})
+
+add('functions', 'call_undefined_function_fail', {
+  status: 'fail',
+  source: `console.log(undefinedFn())
+`,
+  title: 'Calling an undefined function fails',
+})
+
+add('flow_control', 'break_outside_loop_fail', {
+  status: 'fail',
+  source: `break
+`,
+  title: 'Break outside a loop fails',
+})
+
+add('flow_control', 'match_on_non_enum_fail', {
+  status: 'fail',
+  source: `const x = "hello"
+match (x) {
+  "a" => 1,
+  _ => 2
+}
+`,
+  title: 'Match on a non-enum value fails',
+})
+
+add('flow_control', 'while_loop', {
+  status: 'pass',
+  source: `let i = 0
+while (i < 3) {
+  console.log(i)
+  i = i + 1
+}
+`,
+  title: 'While loop',
+})
+
+add('data_types', 'duplicate_struct_field_fail', {
+  status: 'fail',
+  source: `struct Point {
+  x: number
+  x: number
+}
+const p = Point { x: 1 }
+`,
+  title: 'Duplicate struct field fails',
+})
+
+add('data_types', 'embed_same_struct_twice_fail', {
+  status: 'fail',
+  source: `struct A {
+  value: number
+}
+struct B {
+  A
+  A
+}
+const b = B { A: A { value: 1 } }
+`,
+  title: 'Embedding the same struct twice fails',
+})
+
+add('data_types', 'embedding_method_ambiguity_fail', {
+  status: 'fail',
+  source: `struct Runner {}
+fn (r Runner) move(): string {
+  return "running"
+}
+struct Swimmer {}
+fn (s Swimmer) move(): string {
+  return "swimming"
+}
+struct Triathlete {
+  Runner
+  Swimmer
+}
+const t = Triathlete { Runner: Runner {}, Swimmer: Swimmer {} }
+console.log(t.move())
+`,
+  title: 'Ambiguous embedded method fails',
+})
+
+add('data_types', 'access_missing_field_fail', {
+  status: 'fail',
+  source: `struct Point {
+  x: number
+}
+const p = Point { x: 1 }
+console.log(p.y)
+`,
+  title: 'Accessing a missing struct field fails',
+})
+
+add('data_types', 'negative_array_index', {
+  status: 'pass',
+  source: `const items = ["a", "b"]
+console.log(items[-1])
+`,
+  title: 'Negative array index behavior',
+})
+
+add('interfaces', 'interface_field_type_mismatch_fail', {
+  status: 'fail',
+  source: `interface Named {
+  name: string
+}
+fn printName(n: Named) {
+  console.log(n.name)
+}
+printName({ name: 42 })
+`,
+  title: 'Interface field type mismatch fails',
+})
+
+add('interfaces', 'interface_mut_on_immutable_fail', {
+  status: 'fail',
+  source: `interface MutableNamed {
+  mut name: string
+}
+fn rename(n: MutableNamed) {
+  n.name = "New"
+}
+const p = { name: "Old" }
+rename(p)
+`,
+  title: 'Mutable interface method on immutable object fails',
+})
+
+add('components', 'jsx_unclosed_tag_fail', {
+  status: 'fail',
+  source: `const el = <div>hello
+console.log(el)
+`,
+  title: 'Unclosed JSX tag fails',
+})
+
+add('components', 'jsx_undefined_component_fail', {
+  status: 'fail',
+  source: `const ui = globalThis.deka.ui
+const html = ui.renderToString(ui.jsx(Missing, {}))
+console.log(html.html)
+`,
+  title: 'Rendering an undefined component fails',
+})
+
+add('components', 'jsx_invalid_attribute_expression_fail', {
+  status: 'fail',
+  source: `const x = <div class={1 + }>text</div>
+console.log(x)
+`,
+  title: 'Invalid JSX attribute expression fails',
+})
+
+add('error_globals', 'json_parse_invalid_fail', {
+  status: 'fail',
+  source: `const parsed = JSON.parse("not json")
+console.log(parsed)
+`,
+  title: 'JSON.parse on invalid input fails',
+})
+
+add('error_globals', 'math_wrong_arg_type', {
+  status: 'pass',
+  source: `console.log(Math.sqrt("four"))
+`,
+  title: 'Math.sqrt with wrong argument type',
+})
+
+add('async', 'async_function', {
+  status: 'pass',
+  source: `async fn fetch(): Promise<string> {
+  return "data"
+}
+const result = fetch()
+console.log("ok")
+`,
+  title: 'Async function declaration',
+})
+
+add('async', 'await_promise', {
+  status: 'pass',
+  source: `async fn value(): Promise<number> {
+  return 7
+}
+async fn main() {
+  const v = await value()
+  console.log(v)
+}
+main()
+`,
+  title: 'Await a promise',
+})
+
+add('async', 'await_outside_async_fail', {
+  status: 'fail',
+  source: `const x = await 1
+console.log(x)
+`,
+  title: 'Await outside an async function fails',
+})
+
 // ---------------------------------------------------------------------------
 // Generate all tests
 // ---------------------------------------------------------------------------

@@ -1,0 +1,5 @@
+{
+  "title": "Using a variable before declaration fails",
+  "stage": "run",
+  "notes": ""
+}

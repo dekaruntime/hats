@@ -1,0 +1,2 @@
+const items = ["a", "b"]
+console.log(items[-1])

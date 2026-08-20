@@ -1,0 +1,5 @@
+{
+  "title": "Match on a non-enum value fails",
+  "stage": "run",
+  "notes": ""
+}

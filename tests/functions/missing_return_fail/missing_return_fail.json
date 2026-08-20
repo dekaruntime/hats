@@ -1,0 +1,5 @@
+{
+  "title": "Missing return for a non-void function fails",
+  "stage": "run",
+  "notes": ""
+}
