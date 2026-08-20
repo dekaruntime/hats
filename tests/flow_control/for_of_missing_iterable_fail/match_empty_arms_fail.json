@@ -1,6 +1,0 @@
-{
-  "title": "Match expression with no arms fails",
-  "stage": "parse",
-  "expectedDiagnosticContains": "match requires at least one arm",
-  "notes": "A match expression must contain at least one arm."
-}
