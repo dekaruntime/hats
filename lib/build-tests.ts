@@ -115,7 +115,7 @@ async function runNativeTest(
   source: string,
   slug: string
 ): Promise<RuntimeResult> {
-  const nativeResult = await runNativeCli(cliPath, source, process.cwd())
+  const nativeResult = await runNativeCli(cliPath, source)
 
   // Native transpile does not expose per-stage diagnostics the same way as wasm.
   // If transpilation produced emitted JS, any remaining failure is a runtime

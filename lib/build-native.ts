@@ -122,66 +122,77 @@ function parseNativeDiagnostics(stderr: string): NativeRunResult['diagnostics'] 
   return diagnostics
 }
 
-function createPrivateTempDir(baseDir: string): string {
-  const dir = path.join(
-    baseDir,
-    'native-run-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2)
-  )
-  fs.mkdirSync(dir, { recursive: true, mode: 0o700 })
+function createPrivateTempDir(): string {
+  const prefix = path.join(os.tmpdir(), 'hats-native-run-')
+  const dir = fs.mkdtempSync(prefix)
+  fs.chmodSync(dir, 0o700)
   return dir
+}
+
+function removeTempDir(tmpDir: string): void {
+  try {
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+  } catch {
+    // Best-effort cleanup; don't let temp-dir removal mask the real result.
+  }
 }
 
 export async function runNativeCli(
   cliPath: string,
   source: string,
-  baseDir: string
+  _baseDir?: string
 ): Promise<NativeRunResult> {
-  const tmpDir = createPrivateTempDir(baseDir)
-  const inputPath = path.join(tmpDir, 'test.ds')
-  const outputPath = path.join(tmpDir, 'test.js')
-
-  fs.writeFileSync(inputPath, source)
-
-  // Ensure bun/node treat the emitted JS as an ES module, matching how wasm runs it.
-  fs.writeFileSync(path.join(tmpDir, 'package.json'), JSON.stringify({ type: 'module' }))
-
-  let transpileOk = false
-  let transpileError = ''
+  const tmpDir = createPrivateTempDir()
 
   try {
-    execSync(`"${cliPath}" transpile "${inputPath}" --out "${outputPath}"`, {
-      cwd: tmpDir,
-      encoding: 'utf-8',
-      timeout: 30000,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    })
-    transpileOk = true
-  } catch (err) {
-    transpileError = String((err as { stderr?: string; stdout?: string }).stderr ?? '')
-  }
+    const inputPath = path.join(tmpDir, 'test.ds')
+    const outputPath = path.join(tmpDir, 'test.js')
 
-  if (!transpileOk || !fs.existsSync(outputPath)) {
-    const diagnostics = parseNativeDiagnostics(transpileError)
-    const firstError = diagnostics[0]?.message ?? transpileError.split('\n').find((l) => l.trim()) ?? 'native transpile failed'
-    return {
-      ok: false,
-      stdout: '',
-      stderr: transpileError,
-      error: firstError,
-      transpileFailed: true,
-      diagnostics,
+    fs.writeFileSync(inputPath, source)
+
+    // Ensure bun/node treat the emitted JS as an ES module, matching how wasm runs it.
+    fs.writeFileSync(path.join(tmpDir, 'package.json'), JSON.stringify({ type: 'module' }))
+
+    let transpileOk = false
+    let transpileError = ''
+
+    try {
+      execSync(`"${cliPath}" transpile "${inputPath}" --out "${outputPath}"`, {
+        cwd: tmpDir,
+        encoding: 'utf-8',
+        timeout: 30000,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      })
+      transpileOk = true
+    } catch (err) {
+      transpileError = String((err as { stderr?: string; stdout?: string }).stderr ?? '')
     }
-  }
 
-  const jsCode = fs.readFileSync(outputPath, 'utf-8')
-  const runResult = await runDekaJsDirect(jsCode, { cwd: '/hats', env: {} })
+    if (!transpileOk || !fs.existsSync(outputPath)) {
+      const diagnostics = parseNativeDiagnostics(transpileError)
+      const firstError = diagnostics[0]?.message ?? transpileError.split('\n').find((l) => l.trim()) ?? 'native transpile failed'
+      return {
+        ok: false,
+        stdout: '',
+        stderr: transpileError,
+        error: firstError,
+        transpileFailed: true,
+        diagnostics,
+      }
+    }
 
-  return {
-    ok: runResult.ok,
-    stdout: runResult.stdout,
-    stderr: runResult.stderr,
-    error: runResult.error,
-    transpileFailed: false,
-    diagnostics: runResult.error ? [{ severity: 'error', message: runResult.error }] : [],
+    const jsCode = fs.readFileSync(outputPath, 'utf-8')
+    const runResult = await runDekaJsDirect(jsCode, { cwd: '/hats', env: {} })
+
+    return {
+      ok: runResult.ok,
+      stdout: runResult.stdout,
+      stderr: runResult.stderr,
+      error: runResult.error,
+      transpileFailed: false,
+      diagnostics: runResult.error ? [{ severity: 'error', message: runResult.error }] : [],
+    }
+  } finally {
+    removeTempDir(tmpDir)
   }
 }
