@@ -3,6 +3,7 @@ import type { HatsCategoryWithResults, HatsTestWithBuildResult } from '@/lib/bui
 
 interface HatsGridProps {
   categories: HatsCategoryWithResults[]
+  nativeAvailable: boolean
 }
 
 function statusColor(status: 'pass' | 'fail' | 'divergent'): string {
@@ -31,7 +32,7 @@ function TestLink({ test }: { test: HatsTestWithBuildResult }) {
   )
 }
 
-export function HatsGrid({ categories }: HatsGridProps) {
+export function HatsGrid({ categories, nativeAvailable }: HatsGridProps) {
   const allTests = categories.flatMap((c) => c.tests)
   const total = allTests.length
   const passing = allTests.filter((t) => t.overallStatus === 'pass').length
@@ -45,6 +46,9 @@ export function HatsGrid({ categories }: HatsGridProps) {
         <h2 className="mb-4 text-lg font-bold">HATS</h2>
         <p className="mb-4 text-xs text-muted-foreground">
           {passing} passing · {failing} failing · {divergent} drift · {total} tests
+          {!nativeAvailable && (
+            <span className="block mt-1 text-amber-500">native runtime unavailable</span>
+          )}
         </p>
         <div className="space-y-4">
           {categories.map((group) => (
@@ -73,6 +77,7 @@ export function HatsGrid({ categories }: HatsGridProps) {
           <h1 className="text-2xl font-bold">Conformance</h1>
           <p className="text-sm text-muted-foreground">
             Each square is a test. Green = both runtimes agree on pass. Red = both agree on fail. Pink = wasm/native drift.
+            {!nativeAvailable && ' Native runtime is unavailable in this build environment, so drift detection is disabled.'}
           </p>
         </div>
 

@@ -48,6 +48,21 @@ export async function prepareNativeCli(version: string): Promise<string | null> 
   }
 
   fs.chmodSync(binaryPath, 0o755)
+
+  // Verify the binary actually executes in this environment (glibc compatibility, etc.).
+  try {
+    execSync(`"${binaryPath}" --version`, {
+      encoding: 'utf-8',
+      timeout: 10000,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+  } catch (err) {
+    const stderr = String((err as { stderr?: string }).stderr ?? '')
+    console.warn(`[hats] native CLI ${binaryPath} failed to run: ${stderr.trim()}`)
+    console.warn('[hats] native drift detection disabled; falling back to wasm-only results')
+    return null
+  }
+
   nativeCliPath = binaryPath
   return binaryPath
 }

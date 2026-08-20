@@ -1,6 +1,8 @@
 import { loadAndRunAllTests } from '../lib/build-tests.ts'
 
-const categories = await loadAndRunAllTests()
+const { nativeAvailable, categories } = await loadAndRunAllTests()
+
+console.log(`[hats] nativeAvailable=${nativeAvailable}`)
 
 for (const category of categories) {
   for (const test of category.tests) {
