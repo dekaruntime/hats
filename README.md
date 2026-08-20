@@ -6,33 +6,40 @@ Live site: **https://hats.deka.gg**
 
 ## How it works
 
-- Tests are plain `.ds` files under `tests/<category>/`.
-- The filename states whether the test should **pass** or **fail**:
-  - `my_test.pass.ds`
-  - `my_test.fail.ds`
-- Optional metadata lives in a matching `.json` file:
-  - `my_test.pass.json`
-- Expected stdout can also be declared inside the `.ds` file with comments:
+Each test is its own folder under `tests/<category>/<test-name>/`:
 
-```deka
-// expected stdout:
-// hello world
-console.log("hello world")
 ```
+tests/parser/missing_semicolon/
+  missing_semicolon.fail.ds      # source under test
+  missing_semicolon.stdout       # exact expected stdout (optional)
+  missing_semicolon.code         # exact expected formatter output (optional)
+  missing_semicolon.json         # title, stage, diagnostic, notes (optional)
+```
+
+The filename of the `.ds` file states whether the test should **pass** or **fail**:
+
+- `<name>.pass.ds`
+- `<name>.fail.ds`
 
 ## Adding a test
 
 1. Fork the repo.
-2. Add your `.ds` file under the right `tests/<category>/` directory.
-3. If you need metadata (title, stage, expected diagnostic, notes), add a matching `.json` file.
-4. Open a pull request.
+2. Create a new folder under `tests/<category>/<test-name>/`.
+3. Add the `.ds` source file.
+4. If the test checks stdout, add a `.stdout` file with the exact expected output.
+5. If the test checks formatter output, add a `.code` file with the exact expected code.
+6. Open a pull request.
+
+## Exact matching
+
+HATS uses exact string comparison for both stdout and formatted code. Every character matters, including trailing newlines. This makes the suite suitable for validating formatter behavior.
 
 ## JSON metadata format
 
 ```json
 {
-  "title": "Optional field omitted defaults to None",
-  "stage": "run",
+  "title": "Missing semicolon between struct fields",
+  "stage": "parse",
   "expectedDiagnosticContains": "expected ';'",
   "notes": "Regression for formatter/tour corruption."
 }

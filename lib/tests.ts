@@ -9,11 +9,12 @@ export interface HatsTest {
   slug: string
   category: string
   status: HatsTestStatus
-  filename: string
+  name: string
   source: string
   title: string
   stage: HatsTestStage
-  expectedOutput?: string
+  expectedStdout?: string
+  expectedCode?: string
   expectedDiagnosticContains?: string
   notes?: string
 }
@@ -35,73 +36,32 @@ function baseNameFromFilename(filename: string): string {
   return filename.replace(/\.(pass|fail)\.ds$/, '')
 }
 
-function slugFromParts(category: string, baseName: string): string {
-  return `${category}-${baseName}`.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+function slugFromParts(category: string, name: string): string {
+  return `${category}-${name}`.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 }
 
-function extractExpectedOutputFromComments(source: string): string | undefined {
-  const lines = source.split('\n')
-  let collecting = false
-  const outputLines: string[] = []
-
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (trimmed.toLowerCase().startsWith('// expected stdout:')) {
-      collecting = true
-      const remainder = trimmed.slice('// expected stdout:'.length).trim()
-      if (remainder.length > 0) {
-        outputLines.push(remainder)
-      }
-      continue
-    }
-    if (collecting) {
-      if (trimmed.startsWith('//')) {
-        const content = trimmed.slice(2).trimStart()
-        outputLines.push(content)
-      } else if (trimmed === '') {
-        // Preserve blank lines inside the expected output block.
-        outputLines.push('')
-      } else {
-        break
-      }
-    }
-  }
-
-  if (outputLines.length === 0) return undefined
-  return outputLines.join('\n').trimEnd() + '\n'
+function readFile(dir: string, filename: string): string | undefined {
+  const filePath = path.join(dir, filename)
+  if (!fs.existsSync(filePath)) return undefined
+  return fs.readFileSync(filePath, 'utf-8')
 }
 
-function readMetadata(
-  dir: string,
-  baseName: string,
-  status: HatsTestStatus,
-  source: string
-): Partial<HatsTest> {
-  const jsonPath = path.join(dir, `${baseName}.${status}.json`)
-  const fromComments = extractExpectedOutputFromComments(source)
-  const fromJson: Partial<HatsTest> = {}
-
-  if (fs.existsSync(jsonPath)) {
-    try {
-      const raw = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'))
-      fromJson.title = typeof raw.title === 'string' ? raw.title : undefined
-      fromJson.stage = ['parse', 'typecheck', 'run'].includes(raw.stage) ? raw.stage : undefined
-      fromJson.expectedOutput =
-        typeof raw.expectedOutput === 'string' ? raw.expectedOutput : undefined
-      fromJson.expectedDiagnosticContains =
-        typeof raw.expectedDiagnosticContains === 'string' ? raw.expectedDiagnosticContains : undefined
-      fromJson.notes = typeof raw.notes === 'string' ? raw.notes : undefined
-    } catch {
-      // ignore malformed JSON
+function readMetadata(dir: string, name: string): Partial<HatsTest> {
+  const jsonPath = path.join(dir, `${name}.json`)
+  if (!fs.existsSync(jsonPath)) return {}
+  try {
+    const raw = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'))
+    return {
+      title: typeof raw.title === 'string' ? raw.title : undefined,
+      stage: ['parse', 'typecheck', 'run'].includes(raw.stage) ? raw.stage : undefined,
+      expectedDiagnosticContains:
+        typeof raw.expectedDiagnosticContains === 'string'
+          ? raw.expectedDiagnosticContains
+          : undefined,
+      notes: typeof raw.notes === 'string' ? raw.notes : undefined,
     }
-  }
-
-  return {
-    title: fromJson.title,
-    stage: fromJson.stage,
-    expectedOutput: fromComments ?? fromJson.expectedOutput,
-    expectedDiagnosticContains: fromJson.expectedDiagnosticContains,
-    notes: fromJson.notes,
+  } catch {
+    return {}
   }
 }
 
@@ -109,39 +69,50 @@ export function loadAllTests(): HatsCategory[] {
   if (!fs.existsSync(TESTS_DIR)) return []
 
   const categories: HatsCategory[] = []
-  const entries = fs.readdirSync(TESTS_DIR, { withFileTypes: true })
+  const categoryEntries = fs.readdirSync(TESTS_DIR, { withFileTypes: true })
 
-  for (const entry of entries) {
-    if (!entry.isDirectory()) continue
-    const categoryName = entry.name
+  for (const categoryEntry of categoryEntries) {
+    if (!categoryEntry.isDirectory()) continue
+    const categoryName = categoryEntry.name
     const categoryDir = path.join(TESTS_DIR, categoryName)
-    const files = fs.readdirSync(categoryDir)
+    const testEntries = fs.readdirSync(categoryDir, { withFileTypes: true })
 
     const tests: HatsTest[] = []
-    for (const file of files) {
-      const status = parseStatusFromFilename(file)
-      if (!status) continue
-      const baseName = baseNameFromFilename(file)
-      const sourcePath = path.join(categoryDir, file)
-      const source = fs.readFileSync(sourcePath, 'utf-8')
-      const metadata = readMetadata(categoryDir, baseName, status, source)
+    for (const testEntry of testEntries) {
+      if (!testEntry.isDirectory()) continue
+      const testName = testEntry.name
+      const testDir = path.join(categoryDir, testName)
+      const files = fs.readdirSync(testDir)
+
+      const dsFile = files.find((f) => parseStatusFromFilename(f))
+      if (!dsFile) continue
+
+      const status = parseStatusFromFilename(dsFile)!
+      const name = baseNameFromFilename(dsFile)
+      const source = readFile(testDir, dsFile)
+      if (source === undefined) continue
+
+      const metadata = readMetadata(testDir, name)
+      const expectedStdout = readFile(testDir, `${name}.stdout`)
+      const expectedCode = readFile(testDir, `${name}.code`)
 
       tests.push({
-        slug: slugFromParts(categoryName, baseName),
+        slug: slugFromParts(categoryName, testName),
         category: categoryName,
         status,
-        filename: file,
+        name: testName,
         source,
-        title: metadata.title ?? baseName.replace(/_/g, ' '),
+        title: metadata.title ?? testName.replace(/_/g, ' '),
         stage: metadata.stage ?? 'run',
-        expectedOutput: metadata.expectedOutput,
+        expectedStdout,
+        expectedCode,
         expectedDiagnosticContains: metadata.expectedDiagnosticContains,
         notes: metadata.notes,
       })
     }
 
     if (tests.length > 0) {
-      tests.sort((a, b) => a.filename.localeCompare(b.filename))
+      tests.sort((a, b) => a.name.localeCompare(b.name))
       categories.push({ name: categoryName, tests })
     }
   }

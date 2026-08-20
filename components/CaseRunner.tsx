@@ -12,6 +12,7 @@ interface RunResult {
   stdout: string
   stderr: string
   js?: string
+  formattedCode?: string
   error?: string
   diagnostics: Array<{
     severity: 'error' | 'warning' | 'info'
@@ -30,17 +31,25 @@ function determineStage(ok: boolean, js?: string, error?: string, diagnostics?: 
 }
 
 async function runTest(test: HatsTest): Promise<RunResult> {
-  const compileResult = await compileDeka(test.source, `${test.slug}.ds`)
+  const [compileResult, formatted] = await Promise.all([
+    compileDeka(test.source, `${test.slug}.ds`),
+    formatDekaDs(test.source),
+  ])
+
+  const formattedCode = formatted.ok ? formatted.code : undefined
+
   if (!compileResult.ok || !compileResult.js) {
     return {
       ok: false,
       stage: determineStage(false, compileResult.js, compileResult.error, compileResult.diagnostics),
       stdout: '',
       stderr: '',
+      formattedCode,
       error: compileResult.error,
       diagnostics: compileResult.diagnostics,
     }
   }
+
   const runResult = await runDekaJs(compileResult.js)
   return {
     ok: runResult.ok,
@@ -48,27 +57,35 @@ async function runTest(test: HatsTest): Promise<RunResult> {
     stdout: runResult.stdout,
     stderr: runResult.stderr,
     js: compileResult.js,
+    formattedCode,
     error: runResult.error,
     diagnostics: compileResult.diagnostics,
   }
 }
 
+function exactMatch(actual: string, expected: string): boolean {
+  return actual === expected
+}
+
 function matchesExpectation(test: HatsTest, result: RunResult): boolean {
   if ((result.ok ? 'pass' : 'fail') !== test.status) return false
   if (result.stage !== test.stage) return false
-  if (test.expectedOutput !== undefined) {
-    const normalizedStdout = result.stdout.trim()
-    const normalizedExpected = test.expectedOutput.trim()
-    if (normalizedStdout !== normalizedExpected && !normalizedStdout.includes(normalizedExpected)) {
-      return false
-    }
+
+  if (test.expectedStdout !== undefined) {
+    if (!exactMatch(result.stdout, test.expectedStdout)) return false
   }
+
+  if (test.expectedCode !== undefined) {
+    if (!exactMatch(result.formattedCode ?? '', test.expectedCode)) return false
+  }
+
   if (test.expectedDiagnosticContains) {
     const hasDiagnostic = result.diagnostics.some((d) =>
       d.message.toLowerCase().includes(test.expectedDiagnosticContains!.toLowerCase())
     )
     if (!hasDiagnostic) return false
   }
+
   return true
 }
 
@@ -191,10 +208,16 @@ export function CaseRunner({ test }: CaseRunnerProps) {
                 <dt className="text-muted-foreground">Stage:</dt>
                 <dd>{test.stage}</dd>
               </div>
-              {test.expectedOutput !== undefined && (
+              {test.expectedStdout !== undefined && (
                 <div className="flex gap-2">
-                  <dt className="text-muted-foreground">Output:</dt>
-                  <dd className="font-mono">{JSON.stringify(test.expectedOutput)}</dd>
+                  <dt className="text-muted-foreground">Stdout:</dt>
+                  <dd className="font-mono">{JSON.stringify(test.expectedStdout)}</dd>
+                </div>
+              )}
+              {test.expectedCode !== undefined && (
+                <div className="flex gap-2">
+                  <dt className="text-muted-foreground">Code:</dt>
+                  <dd className="font-mono">{JSON.stringify(test.expectedCode)}</dd>
                 </div>
               )}
               {test.expectedDiagnosticContains && (
@@ -242,6 +265,15 @@ export function CaseRunner({ test }: CaseRunnerProps) {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {result.formattedCode !== undefined && (
+                <div>
+                  <h3 className="mb-2 font-semibold">Formatted code</h3>
+                  <pre className="max-h-96 overflow-auto rounded-md bg-muted p-3 text-xs">
+                    {result.formattedCode}
+                  </pre>
                 </div>
               )}
 

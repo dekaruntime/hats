@@ -1,0 +1,5 @@
+{
+  "title": "Basic spacing formatter test",
+  "stage": "run",
+  "notes": "Formatter should insert spaces around operators."
+}

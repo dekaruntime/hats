@@ -1,9 +1,9 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Play, CheckCircle2, XCircle, Loader2, Plus } from 'lucide-react'
-import { compileDeka, runDekaJs } from '@/lib/compiler/runtime'
+import { compileDeka, runDekaJs, formatDekaDs } from '@/lib/compiler/runtime'
 import type { HatsCategory, HatsTest, HatsTestStage } from '@/lib/tests'
 
 interface RunResult {
@@ -11,6 +11,7 @@ interface RunResult {
   stage: HatsTestStage
   stdout: string
   stderr: string
+  formattedCode?: string
   error?: string
   diagnostics: Array<{
     severity: 'error' | 'warning' | 'info'
@@ -35,44 +36,60 @@ function determineStage(ok: boolean, js?: string, error?: string, diagnostics?: 
 }
 
 async function runTest(test: HatsTest): Promise<RunResult> {
-  const compileResult = await compileDeka(test.source, `${test.slug}.ds`)
+  const [compileResult, formatted] = await Promise.all([
+    compileDeka(test.source, `${test.slug}.ds`),
+    formatDekaDs(test.source),
+  ])
+
+  const formattedCode = formatted.ok ? formatted.code : undefined
+
   if (!compileResult.ok || !compileResult.js) {
     return {
       ok: false,
       stage: determineStage(false, compileResult.js, compileResult.error, compileResult.diagnostics),
       stdout: '',
       stderr: '',
+      formattedCode,
       error: compileResult.error,
       diagnostics: compileResult.diagnostics,
     }
   }
+
   const runResult = await runDekaJs(compileResult.js)
   return {
     ok: runResult.ok,
     stage: 'run',
     stdout: runResult.stdout,
     stderr: runResult.stderr,
+    formattedCode,
     error: runResult.error,
     diagnostics: compileResult.diagnostics,
   }
 }
 
+function exactMatch(actual: string, expected: string): boolean {
+  return actual === expected
+}
+
 function testMatchesExpectation(test: HatsTest, result: RunResult): boolean {
   if ((result.ok ? 'pass' : 'fail') !== test.status) return false
   if (result.stage !== test.stage) return false
-  if (test.expectedOutput !== undefined) {
-    const normalizedStdout = result.stdout.trim()
-    const normalizedExpected = test.expectedOutput.trim()
-    if (normalizedStdout !== normalizedExpected && !normalizedStdout.includes(normalizedExpected)) {
-      return false
-    }
+
+  if (test.expectedStdout !== undefined) {
+    if (!exactMatch(result.stdout, test.expectedStdout)) return false
   }
+
+  if (test.expectedCode !== undefined) {
+    if (!exactMatch(result.formattedCode ?? '', test.expectedCode)) return false
+  }
+
   if (test.expectedDiagnosticContains) {
     const hasDiagnostic = result.diagnostics.some((d) =>
       d.message.toLowerCase().includes(test.expectedDiagnosticContains!.toLowerCase())
     )
     if (!hasDiagnostic) return false
   }
+
   return true
 }
 
