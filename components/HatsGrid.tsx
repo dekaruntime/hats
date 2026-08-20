@@ -1,3 +1,6 @@
+'use client'
+
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { HatsCategoryWithResults, HatsTestWithBuildResult } from '@/lib/build-tests'
 
@@ -32,8 +35,35 @@ function TestLink({ test }: { test: HatsTestWithBuildResult }) {
   )
 }
 
+function normalizeSearch(value: string): string {
+  return value.toLowerCase().replace(/\s+/g, ' ').trim()
+}
+
+function testMatches(query: string, test: HatsTestWithBuildResult): boolean {
+  if (query === '') return true
+  return (
+    test.title.toLowerCase().includes(query) ||
+    test.slug.toLowerCase().includes(query) ||
+    test.category.toLowerCase().includes(query)
+  )
+}
+
 export function HatsGrid({ categories, nativeAvailable }: HatsGridProps) {
+  const [query, setQuery] = useState('')
+  const normalizedQuery = normalizeSearch(query)
+
+  const filteredCategories = useMemo(() => {
+    if (normalizedQuery === '') return categories
+    return categories
+      .map((group) => ({
+        ...group,
+        tests: group.tests.filter((test) => testMatches(normalizedQuery, test)),
+      }))
+      .filter((group) => group.tests.length > 0)
+  }, [categories, normalizedQuery])
+
   const allTests = categories.flatMap((c) => c.tests)
+  const visibleTests = filteredCategories.flatMap((c) => c.tests)
   const total = allTests.length
   const passing = allTests.filter((t) => t.overallStatus === 'pass').length
   const failing = allTests.filter((t) => t.overallStatus === 'fail').length
@@ -42,32 +72,51 @@ export function HatsGrid({ categories, nativeAvailable }: HatsGridProps) {
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       {/* Contents sidebar */}
-      <aside className="w-64 border-r border-border p-4">
-        <h2 className="mb-4 text-lg font-bold">HATS</h2>
-        <p className="mb-4 text-xs text-muted-foreground">
-          {passing} passing · {failing} failing · {divergent} drift · {total} tests
-          {!nativeAvailable && (
-            <span className="block mt-1 text-amber-500">native runtime unavailable</span>
+      <aside className="flex w-64 flex-col border-r border-border">
+        <div className="border-b border-border p-4">
+          <h2 className="mb-2 text-lg font-bold">HATS</h2>
+          <p className="mb-3 text-xs text-muted-foreground">
+            {passing} passing · {failing} failing · {divergent} drift · {total} tests
+            {!nativeAvailable && (
+              <span className="block mt-1 text-amber-500">native runtime unavailable</span>
+            )}
+          </p>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Filter tests…"
+            className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+          />
+          {normalizedQuery !== '' && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              {visibleTests.length} of {total} tests shown
+            </p>
           )}
-        </p>
-        <div className="space-y-4">
-          {categories.map((group) => (
-            <div key={group.name}>
-              <div className="mb-1 flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {group.name}
-                </h3>
-                <span className="text-[10px] text-muted-foreground">
-                  {group.tests.filter((t) => t.overallStatus === 'pass').length}/{group.tests.length}
-                </span>
+        </div>
+        <div className="flex-1 overflow-auto p-4">
+          <div className="space-y-4">
+            {filteredCategories.map((group) => (
+              <div key={group.name}>
+                <div className="mb-1 flex items-center justify-between">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    {group.name}
+                  </h3>
+                  <span className="text-[10px] text-muted-foreground">
+                    {group.tests.filter((t) => t.overallStatus === 'pass').length}/{group.tests.length}
+                  </span>
+                </div>
+                <div className="space-y-0.5">
+                  {group.tests.map((test) => (
+                    <TestLink key={test.slug} test={test} />
+                  ))}
+                </div>
               </div>
-              <div className="space-y-0.5">
-                {group.tests.map((test) => (
-                  <TestLink key={test.slug} test={test} />
-                ))}
-              </div>
-            </div>
-          ))}
+            ))}
+            {filteredCategories.length === 0 && (
+              <p className="text-sm text-muted-foreground">No tests match your filter.</p>
+            )}
+          </div>
         </div>
       </aside>
 
@@ -82,7 +131,7 @@ export function HatsGrid({ categories, nativeAvailable }: HatsGridProps) {
         </div>
 
         <div className="space-y-8">
-          {categories.map((group) => (
+          {filteredCategories.map((group) => (
             <section key={group.name}>
               <div className="mb-2 flex items-center gap-2">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
@@ -111,6 +160,9 @@ export function HatsGrid({ categories, nativeAvailable }: HatsGridProps) {
               </div>
             </section>
           ))}
+          {filteredCategories.length === 0 && (
+            <p className="text-muted-foreground">No tests match your filter.</p>
+          )}
         </div>
       </main>
     </div>
