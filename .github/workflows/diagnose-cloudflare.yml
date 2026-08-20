@@ -1,0 +1,26 @@
+name: Diagnose Cloudflare routing
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: [self-hosted, macOS, ARM64]
+    steps:
+      - name: Query Cloudflare config
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "=== zones ==="
+          curl -s -H "Authorization: Bearer $CF_API_TOKEN" "https://api.cloudflare.com/client/v4/zones?name=deka.gg" | jq '.result[] | {id, name, status}'
+          ZONE_ID=$(curl -s -H "Authorization: Bearer $CF_API_TOKEN" "https://api.cloudflare.com/client/v4/zones?name=deka.gg" | jq -r '.result[0].id')
+          echo "=== DNS records ==="
+          curl -s -H "Authorization: Bearer $CF_API_TOKEN" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" | jq '.result[] | {name, type, content, proxied}'
+          echo "=== workers routes ==="
+          curl -s -H "Authorization: Bearer $CF_API_TOKEN" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/workers/routes" | jq .
+          echo "=== workers custom domains (account) ==="
+          ACCOUNT_ID=$(curl -s -H "Authorization: Bearer $CF_API_TOKEN" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID" | jq -r '.result.account.id')
+          curl -s -H "Authorization: Bearer $CF_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/workers/domains" | jq .
+          echo "=== pages projects ==="
+          curl -s -H "Authorization: Bearer $CF_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_ID/pages/projects" | jq '.result[] | {name, subdomain, domains}'
