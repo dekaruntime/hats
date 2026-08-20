@@ -5,29 +5,38 @@ interface HatsGridProps {
   categories: HatsCategoryWithResults[]
 }
 
+function statusColor(status: 'pass' | 'fail' | 'divergent'): string {
+  switch (status) {
+    case 'pass':
+      return 'bg-green-500'
+    case 'divergent':
+      return 'bg-pink-500'
+    case 'fail':
+      return 'bg-red-500'
+  }
+}
+
 function TestLink({ test }: { test: HatsTestWithBuildResult }) {
   return (
     <Link
       href={`/case/${test.slug}`}
       className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-accent"
     >
-      <span
-        className={`size-2.5 rounded-sm ${
-          test.matchesExpectation ? 'bg-green-500' : 'bg-red-500'
-        }`}
-      />
+      <span className={`size-2.5 rounded-sm ${statusColor(test.overallStatus)}`} />
       <span className="truncate">{test.title}</span>
+      <span className="ml-auto text-[10px] text-muted-foreground">
+        {test.overallStatus === 'pass' ? 'both' : test.overallStatus === 'fail' ? 'both fail' : 'drift'}
+      </span>
     </Link>
   )
 }
 
 export function HatsGrid({ categories }: HatsGridProps) {
-  const total = categories.reduce((sum, c) => sum + c.tests.length, 0)
-  const passing = categories.reduce(
-    (sum, c) => sum + c.tests.filter((t) => t.matchesExpectation).length,
-    0
-  )
-  const failing = total - passing
+  const allTests = categories.flatMap((c) => c.tests)
+  const total = allTests.length
+  const passing = allTests.filter((t) => t.overallStatus === 'pass').length
+  const failing = allTests.filter((t) => t.overallStatus === 'fail').length
+  const divergent = allTests.filter((t) => t.overallStatus === 'divergent').length
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -35,7 +44,7 @@ export function HatsGrid({ categories }: HatsGridProps) {
       <aside className="w-64 border-r border-border p-4">
         <h2 className="mb-4 text-lg font-bold">HATS</h2>
         <p className="mb-4 text-xs text-muted-foreground">
-          {passing} passing · {failing} failing · {total} tests
+          {passing} passing · {failing} failing · {divergent} drift · {total} tests
         </p>
         <div className="space-y-4">
           {categories.map((group) => (
@@ -45,7 +54,7 @@ export function HatsGrid({ categories }: HatsGridProps) {
                   {group.name}
                 </h3>
                 <span className="text-[10px] text-muted-foreground">
-                  {group.tests.filter((t) => t.matchesExpectation).length}/{group.tests.length}
+                  {group.tests.filter((t) => t.overallStatus === 'pass').length}/{group.tests.length}
                 </span>
               </div>
               <div className="space-y-0.5">
@@ -63,7 +72,7 @@ export function HatsGrid({ categories }: HatsGridProps) {
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Conformance</h1>
           <p className="text-sm text-muted-foreground">
-            Each square is a test. Green = matches expectation, red = does not.
+            Each square is a test. Green = both runtimes agree on pass. Red = both agree on fail. Pink = wasm/native drift.
           </p>
         </div>
 
@@ -75,7 +84,7 @@ export function HatsGrid({ categories }: HatsGridProps) {
                   {group.name}
                 </h2>
                 <span className="text-xs text-muted-foreground">
-                  {group.tests.filter((t) => t.matchesExpectation).length}/{group.tests.length}
+                  {group.tests.filter((t) => t.overallStatus === 'pass').length}/{group.tests.length}
                 </span>
               </div>
               <div className="flex flex-wrap gap-1">
@@ -83,11 +92,8 @@ export function HatsGrid({ categories }: HatsGridProps) {
                   <Link
                     key={test.slug}
                     href={`/case/${test.slug}`}
-                    title={`${test.title}\n${test.category} · ${test.status} · ${test.stage}`}
-                    className={`
-                      size-3.5 rounded-sm transition-opacity hover:opacity-70
-                      ${test.matchesExpectation ? 'bg-green-500' : 'bg-red-500'}
-                    `}
+                    title={`${test.title}\n${test.category} · wasm: ${test.wasmMatches ? 'match' : 'mismatch'} · native: ${test.nativeMatches ? 'match' : 'mismatch'}`}
+                    className={`size-3.5 rounded-sm transition-opacity hover:opacity-70 ${statusColor(test.overallStatus)}`}
                   />
                 ))}
                 <a

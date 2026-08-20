@@ -1,8 +1,11 @@
 import { loadWasmCompiler, compileWithWasm, formatDsWithWasm } from './build-wasm'
+import { prepareNativeCli, runNativeCli } from './build-native'
 import { runDekaJsDirect } from './compiler/runtime'
 import { loadAllTests, type HatsCategory, type HatsTest, type HatsTestStage } from './tests'
 
-export interface BuildTestResult {
+export type RuntimeStatus = 'pass' | 'fail'
+
+export interface RuntimeResult {
   ok: boolean
   stage: HatsTestStage
   stdout: string
@@ -18,8 +21,11 @@ export interface BuildTestResult {
 }
 
 export interface HatsTestWithBuildResult extends HatsTest {
-  result: BuildTestResult
-  matchesExpectation: boolean
+  wasmResult: RuntimeResult
+  nativeResult: RuntimeResult
+  wasmMatches: boolean
+  nativeMatches: boolean
+  overallStatus: 'pass' | 'fail' | 'divergent'
 }
 
 export interface HatsCategoryWithResults extends HatsCategory {
@@ -30,7 +36,7 @@ function determineStage(
   ok: boolean,
   js?: string,
   error?: string,
-  diagnostics?: BuildTestResult['diagnostics']
+  diagnostics?: RuntimeResult['diagnostics']
 ): HatsTestStage {
   if (ok) return 'run'
   if (error && error.length > 0 && (!js || js.length === 0)) return 'parse'
@@ -43,7 +49,11 @@ function exactMatch(actual: string, expected: string): boolean {
   return actual === expected
 }
 
-function matchesExpectation(test: HatsTest, result: BuildTestResult): boolean {
+function runtimeMatchesExpectation(
+  test: HatsTest,
+  result: RuntimeResult,
+  options: { ignoreCode?: boolean } = {}
+): boolean {
   if ((result.ok ? 'pass' : 'fail') !== test.status) return false
   if (result.stage !== test.stage) return false
 
@@ -51,7 +61,7 @@ function matchesExpectation(test: HatsTest, result: BuildTestResult): boolean {
     if (!exactMatch(result.stdout, test.expectedStdout)) return false
   }
 
-  if (test.expectedCode !== undefined) {
+  if (!options.ignoreCode && test.expectedCode !== undefined) {
     if (!exactMatch(result.formattedCode ?? '', test.expectedCode)) return false
   }
 
@@ -65,10 +75,10 @@ function matchesExpectation(test: HatsTest, result: BuildTestResult): boolean {
   return true
 }
 
-async function runTestSource(
+async function runWasmTest(
   source: string,
   slug: string
-): Promise<BuildTestResult> {
+): Promise<RuntimeResult> {
   const compileResult = compileWithWasm(globalHatsCompiler, source, `${slug}.ds`)
   const formatResult = formatDsWithWasm(globalHatsCompiler, source)
 
@@ -96,21 +106,86 @@ async function runTestSource(
   }
 }
 
+function runNativeTest(
+  cliPath: string,
+  source: string,
+  slug: string
+): RuntimeResult {
+  const nativeResult = runNativeCli(cliPath, source, process.cwd())
+
+  // Native transpile does not expose per-stage diagnostics the same way as wasm,
+  // so we approximate the stage from whether the emitted JS was created.
+  const stage: HatsTestStage = nativeResult.ok
+    ? 'run'
+    : nativeResult.error === 'native transpile failed'
+      ? 'parse'
+      : 'typecheck'
+
+  return {
+    ok: nativeResult.ok,
+    stage,
+    stdout: nativeResult.stdout,
+    stderr: nativeResult.stderr,
+    error: nativeResult.error,
+    diagnostics: [],
+  }
+}
+
+function computeOverallStatus(
+  wasmMatches: boolean,
+  nativeMatches: boolean,
+  nativeAvailable: boolean
+): 'pass' | 'fail' | 'divergent' {
+  if (!nativeAvailable) {
+    return wasmMatches ? 'pass' : 'fail'
+  }
+  if (wasmMatches && nativeMatches) return 'pass'
+  if (!wasmMatches && !nativeMatches) return 'fail'
+  return 'divergent'
+}
+
+function emptyNativeResult(): RuntimeResult {
+  return {
+    ok: false,
+    stage: 'parse',
+    stdout: '',
+    stderr: '',
+    diagnostics: [],
+  }
+}
+
 let globalHatsCompiler: Awaited<ReturnType<typeof loadWasmCompiler>>
 
 export async function loadAndRunAllTests(): Promise<HatsCategoryWithResults[]> {
   globalHatsCompiler = await loadWasmCompiler()
+  const wasmVersion = (await (await fetch('https://wasm.deka.gg/latest/deka-compiler-artifact.json')).json()) as {
+    compiler: { version: string }
+  }
+  const nativeCliPath = await prepareNativeCli(wasmVersion.compiler.version)
+
   const categories = loadAllTests()
 
   const results: HatsCategoryWithResults[] = []
+  const nativeAvailable = nativeCliPath !== null
+
   for (const category of categories) {
     const tests: HatsTestWithBuildResult[] = []
     for (const test of category.tests) {
-      const result = await runTestSource(test.source, test.slug)
+      const wasmResult = await runWasmTest(test.source, test.slug)
+      const nativeResult = nativeCliPath
+        ? runNativeTest(nativeCliPath, test.source, test.slug)
+        : emptyNativeResult()
+
+      const wasmMatches = runtimeMatchesExpectation(test, wasmResult)
+      const nativeMatches = runtimeMatchesExpectation(test, nativeResult, { ignoreCode: true })
+
       tests.push({
         ...test,
-        result,
-        matchesExpectation: matchesExpectation(test, result),
+        wasmResult,
+        nativeResult,
+        wasmMatches,
+        nativeMatches,
+        overallStatus: computeOverallStatus(wasmMatches, nativeMatches, nativeAvailable),
       })
     }
     results.push({ ...category, tests })
