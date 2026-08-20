@@ -1,12 +1,14 @@
 import { Terminal, Trash2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { CompilerDiagnostic } from '@/lib/compiler/runtime'
+import { formatDiagnostic } from '@/lib/compiler/diagnostic-format'
 
 interface ConsolePanelProps {
   stdout: string
   stderr: string
   error?: string
   diagnostics?: CompilerDiagnostic[]
+  source?: string
   onClear: () => void
 }
 
@@ -23,26 +25,15 @@ function severityClass(severity: CompilerDiagnostic['severity']) {
   }
 }
 
-function DiagnosticItem({ diagnostic }: { diagnostic: CompilerDiagnostic }) {
-  const location = [diagnostic.file, diagnostic.line, diagnostic.column]
-    .filter((part) => part !== undefined)
-    .join(':')
-
+function DiagnosticItem({ diagnostic, source }: { diagnostic: CompilerDiagnostic; source?: string }) {
   return (
     <div className={`rounded-lg border p-3 ${severityClass(diagnostic.severity)}`}>
-      <div className="mb-1 flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wider">
-        <span>{diagnostic.severity}</span>
-        {diagnostic.code ? (
-          <code className="rounded bg-black/10 px-1 py-0.5 dark:bg-white/10">{diagnostic.code}</code>
-        ) : null}
-        {location ? <span className="font-normal text-muted-foreground">→ {location}</span> : null}
-      </div>
-      <pre className="whitespace-pre-wrap break-all text-sm">{diagnostic.message}</pre>
+      <pre className="whitespace-pre-wrap break-all text-sm">{formatDiagnostic(diagnostic, source)}</pre>
     </div>
   )
 }
 
-export function ConsolePanel({ stdout, stderr, error, diagnostics, onClear }: ConsolePanelProps) {
+export function ConsolePanel({ stdout, stderr, error, diagnostics, source, onClear }: ConsolePanelProps) {
   const hasConsole = Boolean(stdout || stderr || error || diagnostics?.length)
 
   return (
@@ -62,7 +53,7 @@ export function ConsolePanel({ stdout, stderr, error, diagnostics, onClear }: Co
         {diagnostics?.length ? (
           <div className="space-y-3">
             {diagnostics.map((diagnostic, index) => (
-              <DiagnosticItem key={index} diagnostic={diagnostic} />
+              <DiagnosticItem key={index} diagnostic={diagnostic} source={source} />
             ))}
           </div>
         ) : error ? (

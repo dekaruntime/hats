@@ -13,6 +13,7 @@ interface TourOutputPanelProps {
   stderr: string
   error?: string
   diagnostics?: CompilerDiagnostic[]
+  source?: string
   onClear: () => void
   displayJs?: string
   compileError?: string
@@ -35,6 +36,7 @@ export function TourOutputPanel({
   stderr,
   error,
   diagnostics,
+  source,
   onClear,
   displayJs,
   compileError,
@@ -96,7 +98,7 @@ export function TourOutputPanel({
         {splitView ? (
           <div className="flex h-full min-h-0 flex-row">
             <div className="min-h-0 flex-1 border-r border-border">
-              <ConsolePanel stdout={stdout} stderr={stderr} error={error} diagnostics={diagnostics} onClear={onClear} />
+              <ConsolePanel stdout={stdout} stderr={stderr} error={error} diagnostics={diagnostics} source={source} onClear={onClear} />
             </div>
             <div className="min-h-0 flex-1">
               <RawPanel
@@ -110,7 +112,7 @@ export function TourOutputPanel({
             </div>
           </div>
         ) : activeView === 'console' ? (
-          <ConsolePanel stdout={stdout} stderr={stderr} error={error} diagnostics={diagnostics} onClear={onClear} />
+          <ConsolePanel stdout={stdout} stderr={stderr} error={error} diagnostics={diagnostics} source={source} onClear={onClear} />
         ) : (
           <RawPanel
             js={displayJs}
