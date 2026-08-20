@@ -1,0 +1,6 @@
+{
+  "title": "Nested object literal field with wrong type fails",
+  "stage": "parse",
+  "expectedDiagnosticContains": "Argument 1 type mismatch: expected interface Line, got Object",
+  "notes": "Type checking recurses into nested object literals for interface compatibility."
+}

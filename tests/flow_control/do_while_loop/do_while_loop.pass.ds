@@ -1,0 +1,5 @@
+let n = 0
+do {
+  console.log(n)
+  n = n + 1
+} while (n < 3)

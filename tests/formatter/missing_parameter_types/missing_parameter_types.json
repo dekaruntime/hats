@@ -1,0 +1,5 @@
+{
+  "title": "Missing parameter type annotations are rejected",
+  "stage": "parse",
+  "notes": "DekaScript function parameters require explicit type annotations."
+}

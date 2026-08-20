@@ -1,0 +1,6 @@
+{
+  "title": "Reversing a frozen array fails",
+  "stage": "run",
+  "expectedDiagnosticContains": "readonly property",
+  "notes": "Array literals are frozen, so reverse cannot mutate."
+}

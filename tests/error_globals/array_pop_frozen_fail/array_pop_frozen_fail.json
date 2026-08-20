@@ -1,0 +1,6 @@
+{
+  "title": "Popping a frozen array fails",
+  "stage": "run",
+  "expectedDiagnosticContains": "Unable to delete property",
+  "notes": "Array literals are frozen, so pop cannot mutate."
+}
