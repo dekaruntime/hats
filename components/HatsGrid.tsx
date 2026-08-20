@@ -189,45 +189,56 @@ export function HatsGrid({ categories }: HatsGridProps) {
                   edit on github
                 </a>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 {group.tests.map((test) => (
                   <Link
                     key={test.slug}
                     href={`/case/${test.slug}`}
                     title={test.title}
                     className={`
-                      flex size-14 items-center justify-center rounded-lg border transition-all hover:scale-105
+                      group relative flex size-20 flex-col items-center justify-center rounded-xl border-2 transition-all hover:scale-105 hover:shadow-md
                       ${
                         test.result
                           ? test.matchesExpectation
-                            ? 'border-green-500/50 bg-green-500/15'
-                            : 'border-red-500/50 bg-red-500/15'
-                          : 'border-border bg-muted'
+                            ? 'border-green-500 bg-green-500/20'
+                            : 'border-red-500 bg-red-500/20'
+                          : test.status === 'pass'
+                            ? 'border-blue-400 bg-blue-400/10'
+                            : 'border-amber-400 bg-amber-400/10'
                       }
                     `}
                   >
                     {test.isRunning ? (
-                      <Loader2 className="size-5 animate-spin" />
+                      <Loader2 className="size-7 animate-spin text-foreground" />
                     ) : test.result ? (
                       test.matchesExpectation ? (
-                        <CheckCircle2 className="size-6 text-green-600 dark:text-green-400" />
+                        <CheckCircle2 className="size-8 text-green-700 dark:text-green-300" />
                       ) : (
-                        <XCircle className="size-6 text-red-600 dark:text-red-400" />
+                        <XCircle className="size-8 text-red-700 dark:text-red-300" />
                       )
                     ) : (
-                      <span className="text-[10px] font-medium uppercase text-muted-foreground">
+                      <span
+                        className={`text-xs font-bold uppercase ${
+                          test.status === 'pass'
+                            ? 'text-blue-700 dark:text-blue-300'
+                            : 'text-amber-700 dark:text-amber-300'
+                        }`}
+                      >
                         {test.status}
                       </span>
                     )}
+                    <span className="mt-1 max-w-[4.5rem] truncate px-1 text-[9px] text-muted-foreground">
+                      {test.name}
+                    </span>
                   </Link>
                 ))}
                 <a
                   href={`https://github.com/dekaruntime/hats/new/main/tests/${group.name}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex size-14 items-center justify-center rounded-lg border border-dashed border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-muted"
+                  className="flex size-20 items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-muted"
                 >
-                  <Plus className="size-5" />
+                  <Plus className="size-7" />
                 </a>
               </div>
             </section>
