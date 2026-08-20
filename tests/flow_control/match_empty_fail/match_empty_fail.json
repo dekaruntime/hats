@@ -1,0 +1,6 @@
+{
+  "title": "Empty match expression fails",
+  "stage": "parse",
+  "expectedDiagnosticContains": "match requires at least one arm",
+  "notes": "A match expression must contain at least one arm. Native CLI currently accepts empty match, producing a divergence."
+}

@@ -1,5 +1,6 @@
 {
-  "title": "Variable with a type annotation",
+  "title": "Variable type annotations are not yet supported",
   "stage": "parse",
-  "notes": ""
+  "expectedDiagnosticContains": "Expected '='",
+  "notes": "DekaScript currently rejects type annotations on let/const bindings."
 }

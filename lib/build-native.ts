@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { execSync } from 'child_process'
 import os from 'os'
+import { runDekaJsDirect } from './compiler/runtime'
 
 const RELEASES_BASE = 'https://releases.deka.gg'
 
@@ -10,6 +11,13 @@ export interface NativeRunResult {
   stdout: string
   stderr: string
   error?: string
+  transpileFailed: boolean
+  diagnostics: Array<{
+    severity: 'error' | 'warning' | 'info'
+    message: string
+    line?: number
+    column?: number
+  }>
 }
 
 let nativeCliPath: string | null = null
@@ -67,6 +75,53 @@ export async function prepareNativeCli(version: string): Promise<string | null> 
   return binaryPath
 }
 
+function parseNativeDiagnostics(stderr: string): NativeRunResult['diagnostics'] {
+  const diagnostics: NativeRunResult['diagnostics'] = []
+  const lines = stderr.split('\n')
+
+  let message: string | undefined
+  let line: number | undefined
+  let column: number | undefined
+
+  for (let i = 0; i < lines.length; i++) {
+    const current = lines[i]
+    // Header line: ┌─ /path/to/file.ds:LINE:COLUMN
+    const headerMatch = current.match(/^┌─\s+\S+:(\d+):(\d+)\s*$/)
+    if (headerMatch) {
+      line = Number(headerMatch[1])
+      column = Number(headerMatch[2])
+      continue
+    }
+    // Message line: │   ^ MESSAGE
+    const messageMatch = current.match(/\^\s+(.+)$/)
+    if (messageMatch) {
+      message = messageMatch[1].trim()
+      if (message) {
+        diagnostics.push({ severity: 'error', message, line, column })
+      }
+      message = undefined
+      line = undefined
+      column = undefined
+    }
+  }
+
+  // Fallback: if no rich diagnostic was parsed, treat the first non-empty,
+  // non-bracketed line as a single-line diagnostic. This covers simple parser
+  // errors like "Missing semicolon" or "DekaScript parameters require a type
+  // annotation" that the native CLI emits without position annotations.
+  if (diagnostics.length === 0) {
+    const firstLine = lines.find((l) => {
+      const trimmed = l.trim()
+      return trimmed.length > 0 && !trimmed.startsWith('[') && !trimmed.startsWith('Validation') && !trimmed.startsWith('❌')
+    })
+    if (firstLine) {
+      diagnostics.push({ severity: 'error', message: firstLine.trim() })
+    }
+  }
+
+  return diagnostics
+}
+
 function createPrivateTempDir(baseDir: string): string {
   const dir = path.join(
     baseDir,
@@ -76,11 +131,11 @@ function createPrivateTempDir(baseDir: string): string {
   return dir
 }
 
-export function runNativeCli(
+export async function runNativeCli(
   cliPath: string,
   source: string,
   baseDir: string
-): NativeRunResult {
+): Promise<NativeRunResult> {
   const tmpDir = createPrivateTempDir(baseDir)
   const inputPath = path.join(tmpDir, 'test.ds')
   const outputPath = path.join(tmpDir, 'test.js')
@@ -106,34 +161,27 @@ export function runNativeCli(
   }
 
   if (!transpileOk || !fs.existsSync(outputPath)) {
+    const diagnostics = parseNativeDiagnostics(transpileError)
+    const firstError = diagnostics[0]?.message ?? transpileError.split('\n').find((l) => l.trim()) ?? 'native transpile failed'
     return {
       ok: false,
       stdout: '',
       stderr: transpileError,
-      error: 'native transpile failed',
+      error: firstError,
+      transpileFailed: true,
+      diagnostics,
     }
   }
 
-  try {
-    const runStdout = execSync('bun run test.js', {
-      cwd: tmpDir,
-      encoding: 'utf-8',
-      timeout: 30000,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    })
-    return {
-      ok: true,
-      stdout: runStdout,
-      stderr: '',
-    }
-  } catch (err) {
-    const stderr = String((err as { stderr?: string; stdout?: string }).stderr ?? '')
-    const stdout = String((err as { stderr?: string; stdout?: string }).stdout ?? '')
-    return {
-      ok: false,
-      stdout,
-      stderr,
-      error: 'native runtime failed',
-    }
+  const jsCode = fs.readFileSync(outputPath, 'utf-8')
+  const runResult = await runDekaJsDirect(jsCode, { cwd: '/hats', env: {} })
+
+  return {
+    ok: runResult.ok,
+    stdout: runResult.stdout,
+    stderr: runResult.stderr,
+    error: runResult.error,
+    transpileFailed: false,
+    diagnostics: runResult.error ? [{ severity: 'error', message: runResult.error }] : [],
   }
 }

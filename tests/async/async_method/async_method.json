@@ -1,5 +1,6 @@
 {
-  "title": "Async method on struct",
+  "title": "Async method on struct is rejected",
   "stage": "parse",
-  "notes": ""
+  "expectedDiagnosticContains": "DekaScript parameters require a type annotation",
+  "notes": "The current parser rejects async receiver methods."
 }

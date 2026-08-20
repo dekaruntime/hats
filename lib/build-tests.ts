@@ -95,6 +95,10 @@ async function runWasmTest(
   }
 
   const runResult = await runDekaJsDirect(compileResult.js)
+  const diagnostics = compileResult.diagnostics.slice()
+  if (!runResult.ok && runResult.error) {
+    diagnostics.push({ severity: 'error', message: runResult.error })
+  }
   return {
     ok: runResult.ok,
     stage: 'run',
@@ -102,24 +106,21 @@ async function runWasmTest(
     stderr: runResult.stderr,
     formattedCode: formatResult.ok ? formatResult.code : undefined,
     error: runResult.error,
-    diagnostics: compileResult.diagnostics,
+    diagnostics,
   }
 }
 
-function runNativeTest(
+async function runNativeTest(
   cliPath: string,
   source: string,
   slug: string
-): RuntimeResult {
-  const nativeResult = runNativeCli(cliPath, source, process.cwd())
+): Promise<RuntimeResult> {
+  const nativeResult = await runNativeCli(cliPath, source, process.cwd())
 
-  // Native transpile does not expose per-stage diagnostics the same way as wasm,
-  // so we approximate the stage from whether the emitted JS was created.
-  const stage: HatsTestStage = nativeResult.ok
-    ? 'run'
-    : nativeResult.error === 'native transpile failed'
-      ? 'parse'
-      : 'typecheck'
+  // Native transpile does not expose per-stage diagnostics the same way as wasm.
+  // If transpilation produced emitted JS, any remaining failure is a runtime
+  // failure. If transpilation itself failed, the error is a parse/type error.
+  const stage: HatsTestStage = nativeResult.transpileFailed ? 'parse' : 'run'
 
   return {
     ok: nativeResult.ok,
@@ -127,7 +128,7 @@ function runNativeTest(
     stdout: nativeResult.stdout,
     stderr: nativeResult.stderr,
     error: nativeResult.error,
-    diagnostics: [],
+    diagnostics: nativeResult.diagnostics,
   }
 }
 
@@ -178,7 +179,7 @@ export async function loadAndRunAllTests(): Promise<HatsBuildResults> {
     for (const test of category.tests) {
       const wasmResult = await runWasmTest(test.source, test.slug)
       const nativeResult = nativeCliPath
-        ? runNativeTest(nativeCliPath, test.source, test.slug)
+        ? await runNativeTest(nativeCliPath, test.source, test.slug)
         : emptyNativeResult()
 
       const wasmMatches = runtimeMatchesExpectation(test, wasmResult)

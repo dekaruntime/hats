@@ -1,6 +1,6 @@
 {
   "title": "console.assert false fails at runtime",
-  "stage": "typecheck",
+  "stage": "run",
   "notes": "",
   "expectedDiagnosticContains": "boom"
 }
