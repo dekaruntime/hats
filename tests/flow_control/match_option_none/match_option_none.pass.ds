@@ -1,4 +1,4 @@
-const maybe: string? = None
+const maybe = Option.None
 const result = match (maybe) {
   Some(value) => value,
   None => "absent",

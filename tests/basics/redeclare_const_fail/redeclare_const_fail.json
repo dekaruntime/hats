@@ -1,5 +1,5 @@
 {
   "title": "Redeclaring a const binding fails",
-  "stage": "typecheck",
+  "stage": "run",
   "notes": ""
 }

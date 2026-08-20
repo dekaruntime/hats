@@ -1,5 +1,5 @@
 {
   "title": "Rendering an undefined component fails",
-  "stage": "typecheck",
+  "stage": "run",
   "notes": ""
 }

@@ -1,6 +1,0 @@
-{
-  "title": "Missing semicolon between struct fields",
-  "stage": "parse",
-  "expectedDiagnosticContains": "expected ';'",
-  "notes": "Regression for formatter/tour corruption."
-}

@@ -1,0 +1,3 @@
+for (const x of 42) {
+  console.log(x)
+}

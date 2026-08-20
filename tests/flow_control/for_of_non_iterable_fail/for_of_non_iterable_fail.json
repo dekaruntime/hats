@@ -1,5 +1,5 @@
 {
-  "title": "For-of over a non-iterable fails",
+  "title": "for of non iterable fail",
   "stage": "run",
   "notes": ""
 }

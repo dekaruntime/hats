@@ -1,5 +1,5 @@
 {
-  "title": "Match on a non-enum value fails",
+  "title": "match on non enum fail",
   "stage": "run",
   "notes": ""
 }

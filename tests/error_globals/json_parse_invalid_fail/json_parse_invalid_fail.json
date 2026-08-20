@@ -1,5 +1,5 @@
 {
-  "title": "JSON.parse on invalid input fails",
+  "title": "json parse invalid fail",
   "stage": "run",
   "notes": ""
 }

@@ -1,5 +1,5 @@
 {
-  "title": "Await outside an async function fails",
+  "title": "await outside async fail",
   "stage": "run",
   "notes": ""
 }

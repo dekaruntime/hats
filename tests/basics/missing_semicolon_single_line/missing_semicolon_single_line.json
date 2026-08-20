@@ -1,5 +1,5 @@
 {
-  "title": "Missing semicolon on a single-line statement fails",
+  "title": "missing semicolon single line",
   "stage": "run",
   "notes": ""
 }
