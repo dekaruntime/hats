@@ -89,6 +89,12 @@ bun scripts/generate-tests.mjs
 
 HATS can compare the wasm compiler against the matching native CLI downloaded from `releases.deka.gg`. On Cloudflare Workers Builds the linux-x64 binary currently fails with a `GLIBC_2.43` mismatch, so native drift detection is disabled in that environment and the site falls back to wasm-only results. See [dekaruntime/hats#1](https://github.com/dekaruntime/hats/issues/1).
 
+Current suite snapshot (runtime v0.23.3):
+
+- 311 tests across 11 categories
+- 309 passing
+- 2 native/wasm divergences tracked in dekaruntime/deka#174, #175, #176
+
 ## Deployment
 
 The site deploys via Cloudflare Workers Builds automatically on every push to `main`.
