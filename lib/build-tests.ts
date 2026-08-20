@@ -1,3 +1,5 @@
+import fs from 'fs'
+import path from 'path'
 import { loadWasmCompiler, compileWithWasm, formatDsWithWasm } from './build-wasm'
 import { prepareNativeCli, runNativeCli } from './build-native'
 import { runDekaJsDirect } from './compiler/runtime'
@@ -207,4 +209,18 @@ export async function loadAndRunAllTests(): Promise<HatsBuildResults> {
     loadAndRunPromise = runAllTestsOnce()
   }
   return loadAndRunPromise
+}
+
+/**
+ * Load pre-computed conformance results from `public/hats-results.json`.
+ * Falls back to running the suite directly when the file is missing (e.g. local
+ * `bun run dev` before the first dump).
+ */
+export async function loadBuildResults(): Promise<HatsBuildResults> {
+  const resultsPath = path.join(process.cwd(), 'public', 'hats-results.json')
+  if (fs.existsSync(resultsPath)) {
+    const raw = JSON.parse(fs.readFileSync(resultsPath, 'utf-8'))
+    return { nativeAvailable: raw.nativeAvailable, categories: raw.categories }
+  }
+  return loadAndRunAllTests()
 }

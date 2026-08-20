@@ -18,6 +18,7 @@
 /out/
 
 # production
+/public/hats-results.json
 /build
 /dist
 
