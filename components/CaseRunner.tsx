@@ -17,7 +17,8 @@ import {
   type CompilerDiagnostic,
 } from '@/lib/compiler/runtime'
 import { terminateSharedSandbox } from '@/lib/compiler/sandbox'
-import type { HatsCategory, HatsTest } from '@/lib/tests'
+import type { HatsTest } from '@/lib/tests'
+import type { HatsCategoryWithResults } from '@/lib/build-tests'
 
 interface RunResult {
   ok: boolean
@@ -73,7 +74,7 @@ function matchesExpectation(test: HatsTest, result: RunResult, stage: 'parse' | 
   return true
 }
 
-export function CaseRunner({ test, categories }: { test: HatsTest; categories: HatsCategory[] }) {
+export function CaseRunner({ test, categories }: { test: HatsTest; categories: HatsCategoryWithResults[] }) {
   const [source, setSource] = useState(test.source)
   const [contentsOpen, setContentsOpen] = useState(false)
   const [isRunning, setIsRunning] = useState(false)

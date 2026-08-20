@@ -9,7 +9,7 @@ interface HatsGridProps {
   nativeAvailable: boolean
 }
 
-function statusColor(status: 'pass' | 'fail' | 'divergent'): string {
+export function statusColor(status: 'pass' | 'fail' | 'divergent'): string {
   switch (status) {
     case 'pass':
       return 'bg-green-500'
@@ -18,23 +18,6 @@ function statusColor(status: 'pass' | 'fail' | 'divergent'): string {
     case 'fail':
       return 'bg-red-500'
   }
-}
-
-function TestLink({ test }: { test: HatsTestWithBuildResult }) {
-  return (
-    <Link
-      href={`/case/${test.slug}`}
-      className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-accent"
-    >
-      <span className={`size-2.5 rounded-sm ${statusColor(test.overallStatus)}`} />
-      <span className="truncate">{test.title}</span>
-      {test.overallStatus !== 'pass' && (
-        <span className="ml-auto text-[10px] text-muted-foreground">
-          {test.overallStatus === 'fail' ? 'fail' : 'drift'}
-        </span>
-      )}
-    </Link>
-  )
 }
 
 function normalizeSearch(value: string): string {
@@ -64,23 +47,21 @@ export function HatsGrid({ categories, nativeAvailable }: HatsGridProps) {
       .filter((group) => group.tests.length > 0)
   }, [categories, normalizedQuery])
 
-  const allTests = categories.flatMap((c) => c.tests)
-  const visibleTests = filteredCategories.flatMap((c) => c.tests)
-  const total = allTests.length
-  const passing = allTests.filter((t) => t.overallStatus === 'pass').length
-  const failing = allTests.filter((t) => t.overallStatus === 'fail').length
-  const divergent = allTests.filter((t) => t.overallStatus === 'divergent').length
+  const total = categories.flatMap((c) => c.tests).length
+  const passing = categories.flatMap((c) => c.tests).filter((t) => t.overallStatus === 'pass').length
+  const failing = categories.flatMap((c) => c.tests).filter((t) => t.overallStatus === 'fail').length
+  const divergent = categories.flatMap((c) => c.tests).filter((t) => t.overallStatus === 'divergent').length
+  const visibleCount = filteredCategories.flatMap((c) => c.tests).length
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
-      {/* Contents sidebar */}
-      <aside className="flex w-64 flex-col border-r border-border">
-        <div className="border-b border-border p-4">
-          <h2 className="mb-2 text-lg font-bold">HATS</h2>
-          <p className="mb-3 text-xs text-muted-foreground">
+    <div className="flex h-screen flex-col bg-background text-foreground">
+      <header className="flex items-center justify-between border-b border-border px-6 py-3">
+        <h1 className="text-xl font-bold">deka test suite</h1>
+        <div className="flex items-center gap-4">
+          <p className="text-xs text-muted-foreground">
             {passing} passing · {failing} failing · {divergent} drift · {total} tests
             {!nativeAvailable && (
-              <span className="block mt-1 text-amber-500">native runtime unavailable</span>
+              <span className="ml-2 text-amber-500">native runtime unavailable</span>
             )}
           </p>
           <input
@@ -88,79 +69,40 @@ export function HatsGrid({ categories, nativeAvailable }: HatsGridProps) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Filter tests…"
-            className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+            className="w-48 rounded-md border border-input bg-background px-3 py-1.5 text-sm outline-none focus:border-ring focus:ring-1 focus:ring-ring"
           />
-          {normalizedQuery !== '' && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              {visibleTests.length} of {total} tests shown
-            </p>
-          )}
         </div>
-        <div className="min-h-0 flex-1 overflow-auto p-4">
-          <div className="space-y-4">
-            {filteredCategories.map((group) => (
-              <div key={group.name}>
-                <div className="mb-1 flex items-center justify-between">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    {group.name}
-                  </h3>
-                  <span className="text-[10px] text-muted-foreground">
-                    {group.tests.filter((t) => t.overallStatus === 'pass').length}/{group.tests.length}
-                  </span>
-                </div>
-                <div className="space-y-0.5">
-                  {group.tests.map((test) => (
-                    <TestLink key={test.slug} test={test} />
-                  ))}
-                </div>
-              </div>
-            ))}
-            {filteredCategories.length === 0 && (
-              <p className="text-sm text-muted-foreground">No tests match your filter.</p>
-            )}
-          </div>
-        </div>
-      </aside>
+      </header>
 
-      {/* Main grid */}
-      <main className="flex-1 p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">Conformance</h1>
-          <p className="text-sm text-muted-foreground">
-            Each square is a test. Green = both runtimes agree on pass. Red = both agree on fail. Pink = wasm/native drift.
-            {!nativeAvailable && ' Native runtime is unavailable in this build environment, so drift detection is disabled.'}
+      <main className="flex-1 overflow-auto p-6">
+        {normalizedQuery !== '' && (
+          <p className="mb-3 text-xs text-muted-foreground">
+            {visibleCount} of {total} tests shown
           </p>
-        </div>
+        )}
 
-        <div className="space-y-8">
+        <div className="flex flex-wrap items-center gap-1">
           {filteredCategories.map((group) => (
-            <section key={group.name}>
-              <div className="mb-2 flex items-center gap-2">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {group.name}
-                </h2>
-                <span className="text-xs text-muted-foreground">
-                  {group.tests.filter((t) => t.overallStatus === 'pass').length}/{group.tests.length}
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {group.tests.map((test) => (
-                  <Link
-                    key={test.slug}
-                    href={`/case/${test.slug}`}
-                    title={`${test.title}\n${test.category} · wasm: ${test.wasmMatches ? 'match' : 'mismatch'} · native: ${test.nativeMatches ? 'match' : 'mismatch'}`}
-                    className={`size-3.5 rounded-sm transition-opacity hover:opacity-70 ${statusColor(test.overallStatus)}`}
-                  />
-                ))}
-                <a
-                  href={`https://github.com/dekaruntime/hats/new/main/tests/${group.name}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Add a new test"
-                  className="size-3.5 rounded-sm border border-dashed border-border bg-muted/50 transition-colors hover:bg-muted"
+            <span key={group.name} className="contents">
+              <span className="mr-1 inline-flex items-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                {group.name}
+              </span>
+              {group.tests.map((test) => (
+                <Link
+                  key={test.slug}
+                  href={`/case/${test.slug}`}
+                  title={`${test.title}\n${test.category} · wasm: ${test.wasmMatches ? 'match' : 'mismatch'} · native: ${test.nativeMatches ? 'match' : 'mismatch'}`}
+                  className={`inline-flex size-4 rounded-sm transition-opacity hover:opacity-70 ${statusColor(test.overallStatus)}`}
                 />
-              </div>
-            </section>
+              ))}
+              <a
+                href={`https://github.com/dekaruntime/hats/new/main/tests/${group.name}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Add a new test"
+                className="inline-flex size-4 rounded-sm border border-dashed border-border bg-muted/50 transition-colors hover:bg-muted"
+              />
+            </span>
           ))}
           {filteredCategories.length === 0 && (
             <p className="text-muted-foreground">No tests match your filter.</p>

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HATS · Human Aided Test Suite",
+  title: "deka test suite",
   description: "Conformance tests for DekaScript, contributed and validated by humans.",
 };
 

@@ -4,10 +4,11 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import type { HatsCategory } from '@/lib/tests'
+import { statusColor } from '@/components/HatsGrid'
+import type { HatsCategoryWithResults } from '@/lib/build-tests'
 
 interface HatsContentsProps {
-  categories: HatsCategory[]
+  categories: HatsCategoryWithResults[]
   currentSlug: string
   onSelect?: () => void
   onClose?: () => void
@@ -80,13 +81,17 @@ export function HatsContents({ categories, currentSlug, onSelect, onClose }: Hat
                       <Link
                         href={`/case/${test.slug}`}
                         onClick={onSelect}
-                        className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
+                        className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors ${
                           active
                             ? 'bg-primary text-primary-foreground'
                             : 'hover:bg-muted'
                         }`}
                       >
-                        {test.title}
+                        <span
+                          className={`size-2.5 shrink-0 rounded-sm ${statusColor(test.overallStatus)}`}
+                          aria-hidden="true"
+                        />
+                        <span className="truncate">{test.title}</span>
                       </Link>
                     </li>
                   )
