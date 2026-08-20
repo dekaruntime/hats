@@ -1,245 +1,102 @@
-'use client'
-
-import { useCallback, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Play, CheckCircle2, XCircle, Loader2, Plus } from 'lucide-react'
-import { compileDeka, runDekaJs, formatDekaDs } from '@/lib/compiler/runtime'
-import type { HatsCategory, HatsTest, HatsTestStage } from '@/lib/tests'
-
-interface RunResult {
-  ok: boolean
-  stage: HatsTestStage
-  stdout: string
-  stderr: string
-  formattedCode?: string
-  error?: string
-  diagnostics: Array<{
-    severity: 'error' | 'warning' | 'info'
-    message: string
-    line?: number
-    column?: number
-  }>
-}
-
-interface HatsTestWithResult extends HatsTest {
-  result?: RunResult
-  matchesExpectation: boolean
-  isRunning?: boolean
-}
-
-function determineStage(ok: boolean, js?: string, error?: string, diagnostics?: RunResult['diagnostics']): HatsTestStage {
-  if (ok) return 'run'
-  if (error && error.length > 0 && (!js || js.length === 0)) return 'parse'
-  const hasErrors = (diagnostics ?? []).some((d) => d.severity === 'error')
-  if (hasErrors) return !js || js.length === 0 ? 'parse' : 'typecheck'
-  return 'parse'
-}
-
-async function runTest(test: HatsTest): Promise<RunResult> {
-  const [compileResult, formatted] = await Promise.all([
-    compileDeka(test.source, `${test.slug}.ds`),
-    formatDekaDs(test.source),
-  ])
-
-  const formattedCode = formatted.ok ? formatted.code : undefined
-
-  if (!compileResult.ok || !compileResult.js) {
-    return {
-      ok: false,
-      stage: determineStage(false, compileResult.js, compileResult.error, compileResult.diagnostics),
-      stdout: '',
-      stderr: '',
-      formattedCode,
-      error: compileResult.error,
-      diagnostics: compileResult.diagnostics,
-    }
-  }
-
-  const runResult = await runDekaJs(compileResult.js)
-  return {
-    ok: runResult.ok,
-    stage: 'run',
-    stdout: runResult.stdout,
-    stderr: runResult.stderr,
-    formattedCode,
-    error: runResult.error,
-    diagnostics: compileResult.diagnostics,
-  }
-}
-
-function exactMatch(actual: string, expected: string): boolean {
-  return actual === expected
-}
-
-function testMatchesExpectation(test: HatsTest, result: RunResult): boolean {
-  if ((result.ok ? 'pass' : 'fail') !== test.status) return false
-  if (result.stage !== test.stage) return false
-
-  if (test.expectedStdout !== undefined) {
-    if (!exactMatch(result.stdout, test.expectedStdout)) return false
-  }
-
-  if (test.expectedCode !== undefined) {
-    if (!exactMatch(result.formattedCode ?? '', test.expectedCode)) return false
-  }
-
-  if (test.expectedDiagnosticContains) {
-    const hasDiagnostic = result.diagnostics.some((d) =>
-      d.message.toLowerCase().includes(test.expectedDiagnosticContains!.toLowerCase())
-    )
-    if (!hasDiagnostic) return false
-  }
-
-  return true
-}
+import type { HatsCategoryWithResults, HatsTestWithBuildResult } from '@/lib/build-tests'
 
 interface HatsGridProps {
-  categories: HatsCategory[]
+  categories: HatsCategoryWithResults[]
+}
+
+function TestLink({ test }: { test: HatsTestWithBuildResult }) {
+  return (
+    <Link
+      href={`/case/${test.slug}`}
+      className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-accent"
+    >
+      <span
+        className={`size-2.5 rounded-sm ${
+          test.matchesExpectation ? 'bg-green-500' : 'bg-red-500'
+        }`}
+      />
+      <span className="truncate">{test.title}</span>
+    </Link>
+  )
 }
 
 export function HatsGrid({ categories }: HatsGridProps) {
-  const [tests, setTests] = useState<HatsTestWithResult[]>(() =>
-    categories.flatMap((c) => c.tests.map((t) => ({ ...t, matchesExpectation: false })))
+  const total = categories.reduce((sum, c) => sum + c.tests.length, 0)
+  const passing = categories.reduce(
+    (sum, c) => sum + c.tests.filter((t) => t.matchesExpectation).length,
+    0
   )
-  const [runningAll, setRunningAll] = useState(false)
-
-  const runOne = useCallback(async (test: HatsTestWithResult) => {
-    setTests((prev) => prev.map((t) => (t.slug === test.slug ? { ...t, isRunning: true } : t)))
-    const result = await runTest(test)
-    const matches = testMatchesExpectation(test, result)
-    setTests((prev) =>
-      prev.map((t) =>
-        t.slug === test.slug ? { ...t, result, matchesExpectation: matches, isRunning: false } : t
-      )
-    )
-  }, [])
-
-  const runAll = useCallback(async () => {
-    setRunningAll(true)
-    for (const test of tests) {
-      await runOne(test)
-    }
-    setRunningAll(false)
-  }, [tests, runOne])
-
-  const grouped = useMemo(() => {
-    const groups = new Map<string, HatsTestWithResult[]>()
-    for (const test of tests) {
-      if (!groups.has(test.category)) groups.set(test.category, [])
-      groups.get(test.category)!.push(test)
-    }
-    return categories
-      .map((c) => ({ name: c.name, tests: groups.get(c.name) ?? [] }))
-      .filter((g) => g.tests.length > 0)
-  }, [tests, categories])
-
-  const summary = useMemo(() => {
-    const run = tests.filter((t) => t.result).length
-    const passing = tests.filter((t) => t.result && t.matchesExpectation).length
-    const failing = tests.filter((t) => t.result && !t.matchesExpectation).length
-    return { run, passing, failing, total: tests.length }
-  }, [tests])
+  const failing = total - passing
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border px-6 py-4">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">HATS</h1>
-            <p className="text-sm text-muted-foreground">Human Aided Test Suite for DekaScript</p>
-          </div>
-          <div className="flex items-center gap-4">
-            {summary.run > 0 && (
-              <div className="flex gap-3 text-sm">
-                <span className="text-green-600 dark:text-green-400">{summary.passing} passing</span>
-                <span className="text-red-600 dark:text-red-400">{summary.failing} failing</span>
-                <span className="text-muted-foreground">{summary.run}/{summary.total} run</span>
+    <div className="flex min-h-screen bg-background text-foreground">
+      {/* Contents sidebar */}
+      <aside className="w-64 border-r border-border p-4">
+        <h2 className="mb-4 text-lg font-bold">HATS</h2>
+        <p className="mb-4 text-xs text-muted-foreground">
+          {passing} passing · {failing} failing · {total} tests
+        </p>
+        <div className="space-y-4">
+          {categories.map((group) => (
+            <div key={group.name}>
+              <div className="mb-1 flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  {group.name}
+                </h3>
+                <span className="text-[10px] text-muted-foreground">
+                  {group.tests.filter((t) => t.matchesExpectation).length}/{group.tests.length}
+                </span>
               </div>
-            )}
-            <button
-              onClick={runAll}
-              disabled={runningAll}
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            >
-              {runningAll ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Play className="size-4" />
-              )}
-              Run all
-            </button>
-          </div>
+              <div className="space-y-0.5">
+                {group.tests.map((test) => (
+                  <TestLink key={test.slug} test={test} />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
-      </header>
+      </aside>
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        <div className="space-y-10">
-          {grouped.map((group) => (
+      {/* Main grid */}
+      <main className="flex-1 p-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">Conformance</h1>
+          <p className="text-sm text-muted-foreground">
+            Each square is a test. Green = matches expectation, red = does not.
+          </p>
+        </div>
+
+        <div className="space-y-8">
+          {categories.map((group) => (
             <section key={group.name}>
-              <div className="mb-4 flex items-center gap-3">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+              <div className="mb-2 flex items-center gap-2">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   {group.name}
                 </h2>
-                <a
-                  href={`https://github.com/dekaruntime/hats/tree/main/tests/${group.name}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-muted-foreground hover:text-foreground"
-                >
-                  edit on github
-                </a>
+                <span className="text-xs text-muted-foreground">
+                  {group.tests.filter((t) => t.matchesExpectation).length}/{group.tests.length}
+                </span>
               </div>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-1">
                 {group.tests.map((test) => (
                   <Link
                     key={test.slug}
                     href={`/case/${test.slug}`}
-                    title={test.title}
+                    title={`${test.title}\n${test.category} · ${test.status} · ${test.stage}`}
                     className={`
-                      group relative flex size-20 flex-col items-center justify-center rounded-xl border-2 transition-all hover:scale-105 hover:shadow-md
-                      ${
-                        test.result
-                          ? test.matchesExpectation
-                            ? 'border-green-500 bg-green-500/20'
-                            : 'border-red-500 bg-red-500/20'
-                          : test.status === 'pass'
-                            ? 'border-blue-400 bg-blue-400/10'
-                            : 'border-amber-400 bg-amber-400/10'
-                      }
+                      size-3.5 rounded-sm transition-opacity hover:opacity-70
+                      ${test.matchesExpectation ? 'bg-green-500' : 'bg-red-500'}
                     `}
-                  >
-                    {test.isRunning ? (
-                      <Loader2 className="size-7 animate-spin text-foreground" />
-                    ) : test.result ? (
-                      test.matchesExpectation ? (
-                        <CheckCircle2 className="size-8 text-green-700 dark:text-green-300" />
-                      ) : (
-                        <XCircle className="size-8 text-red-700 dark:text-red-300" />
-                      )
-                    ) : (
-                      <span
-                        className={`text-xs font-bold uppercase ${
-                          test.status === 'pass'
-                            ? 'text-blue-700 dark:text-blue-300'
-                            : 'text-amber-700 dark:text-amber-300'
-                        }`}
-                      >
-                        {test.status}
-                      </span>
-                    )}
-                    <span className="mt-1 max-w-[4.5rem] truncate px-1 text-[9px] text-muted-foreground">
-                      {test.name}
-                    </span>
-                  </Link>
+                  />
                 ))}
                 <a
                   href={`https://github.com/dekaruntime/hats/new/main/tests/${group.name}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex size-20 items-center justify-center rounded-xl border-2 border-dashed border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-muted"
-                >
-                  <Plus className="size-7" />
-                </a>
+                  title="Add a new test"
+                  className="size-3.5 rounded-sm border border-dashed border-border bg-muted/50 transition-colors hover:bg-muted"
+                />
               </div>
             </section>
           ))}
