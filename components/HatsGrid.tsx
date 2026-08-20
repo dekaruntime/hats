@@ -54,9 +54,16 @@ export function HatsGrid({ categories, nativeAvailable }: HatsGridProps) {
   const visibleCount = filteredCategories.flatMap((c) => c.tests).length
 
   return (
-    <div className="flex h-screen flex-col bg-background text-foreground">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <header className="flex items-center justify-between border-b border-border px-6 py-3">
-        <h1 className="text-xl font-bold">deka test suite</h1>
+        <div className="flex items-center gap-3">
+          <img
+            src="/deka-logo.png"
+            alt="deka"
+            className="h-6 w-auto"
+          />
+          <h1 className="text-xl font-bold">deka test suite</h1>
+        </div>
         <div className="flex items-center gap-4">
           <p className="text-xs text-muted-foreground">
             {passing} passing · {failing} failing · {divergent} drift · {total} tests
@@ -95,13 +102,6 @@ export function HatsGrid({ categories, nativeAvailable }: HatsGridProps) {
                   className={`inline-flex size-4 rounded-sm transition-opacity hover:opacity-70 ${statusColor(test.overallStatus)}`}
                 />
               ))}
-              <a
-                href={`https://github.com/dekaruntime/hats/new/main/tests/${group.name}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Add a new test"
-                className="inline-flex size-4 rounded-sm border border-dashed border-border bg-muted/50 transition-colors hover:bg-muted"
-              />
             </span>
           ))}
           {filteredCategories.length === 0 && (
