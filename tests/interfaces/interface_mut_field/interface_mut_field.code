@@ -1,0 +1,11 @@
+interface MutableNamed {
+  mut name: string;
+}
+
+fn rename(n: MutableNamed) {
+  n.name = "New"
+}
+
+let p = {name: "Old"}
+rename(p)
+console.log(p.name)

@@ -1,0 +1,19 @@
+struct Person {
+  name: string;
+}
+
+fn (p Person) greet(): string {
+  return "Hello, " + p.name
+}
+
+struct Employee {
+  embed Person;
+  id: string;
+}
+
+fn (e Employee) greet(): string {
+  return "Hi, " + e.name
+}
+
+const e = Employee { Person: Person { name: "Charlie" }, id: "E1" }
+console.log(e.greet())

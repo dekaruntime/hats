@@ -1,0 +1,8 @@
+interface CardProps {
+  title: string
+  subtitle?: string
+}
+fn show(props: CardProps) {
+  console.log(props.title)
+}
+show({ title: "Hello" })

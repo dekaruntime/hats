@@ -1,0 +1,9 @@
+struct Counter {
+  value: number
+}
+fn (c mut Counter) increment(): void {
+  c.value = c.value + 1
+}
+let c = Counter { value: 0 }
+c.increment()
+console.log(c.value)

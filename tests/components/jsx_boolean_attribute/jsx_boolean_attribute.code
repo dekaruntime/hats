@@ -1,0 +1,3 @@
+const ui = globalThis.deka.ui
+const html = ui.renderToString(ui.jsx("button", {disabled: true, children: "Save"}))
+console.log(html.html)

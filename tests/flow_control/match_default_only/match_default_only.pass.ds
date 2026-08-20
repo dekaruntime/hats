@@ -1,0 +1,5 @@
+const n = 7
+const label = match (n) {
+  _ => "fallback"
+}
+console.log(label)

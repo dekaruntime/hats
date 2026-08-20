@@ -1,0 +1,5 @@
+{
+  "title": "Missing semicolon on a single-line statement fails",
+  "stage": "run",
+  "notes": ""
+}

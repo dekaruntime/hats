@@ -1,0 +1,7 @@
+const x = 1
+fn shadow(): number {
+  const x = 2
+  return x
+}
+console.log(shadow())
+console.log(x)
