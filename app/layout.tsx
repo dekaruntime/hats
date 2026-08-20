@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "deka test suite",
   description: "Conformance tests for DekaScript, contributed and validated by humans.",
+  icons: {
+    icon: "/deka-logo.png",
+  },
 };
 
 export default function RootLayout({

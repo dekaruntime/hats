@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle2, List, XCircle, ArrowRight } from 'lucide-react'
+import { CheckCircle2, List, XCircle, ArrowRight } from 'lucide-react'
 import { HatsContents } from './HatsContents'
 import { ResizableSplitter } from './ResizableSplitter'
 import { Button } from '@/components/ui/button'
@@ -328,9 +328,17 @@ export function CaseRunner({ test, categories }: { test: HatsTest; categories: H
     <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       <header className="border-b border-border px-6 py-3">
         <div className="flex items-center gap-4">
-          <Link href="/" className="text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="size-5" />
-          </Link>
+          <a
+            href="https://testsuite.deka.gg"
+            className="flex items-center text-muted-foreground hover:text-foreground"
+            aria-label="Back to deka test suite"
+          >
+            <img
+              src="/deka-logo.png"
+              alt="deka"
+              className="h-6 w-auto"
+            />
+          </a>
           <div>
             <h1 className="text-lg font-bold">{test.title}</h1>
             <p className="text-xs text-muted-foreground">
