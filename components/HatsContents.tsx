@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -21,6 +21,11 @@ function normalize(value: string): string {
 export function HatsContents({ categories, currentSlug, onSelect, onClose }: HatsContentsProps) {
   const [query, setQuery] = useState('')
   const normalizedQuery = normalize(query)
+  const activeRef = useRef<HTMLAnchorElement>(null)
+
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ block: 'center', behavior: 'auto' })
+  }, [currentSlug])
 
   const filteredCategories = useMemo(() => {
     if (normalizedQuery === '') return categories
@@ -79,6 +84,7 @@ export function HatsContents({ categories, currentSlug, onSelect, onClose }: Hat
                   return (
                     <li key={test.slug}>
                       <Link
+                        ref={active ? activeRef : undefined}
                         href={`/case/${test.slug}`}
                         onClick={onSelect}
                         className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors ${
