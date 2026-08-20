@@ -1,11 +1,11 @@
 {
-  "name": "hats",
+  "name": "deka-test-suite",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "bun scripts/dump-results.mjs && next build",
-    "deploy": "bun run build && wrangler deploy",
+    "deploy": "bunx wrangler pages deploy dist --project-name deka-test-suite --branch main",
     "start": "next start",
     "lint": "eslint"
   },
