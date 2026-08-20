@@ -338,7 +338,7 @@ export function CaseRunner({ test, categories }: { test: HatsTest; categories: H
             />
           ) : (
             <>
-              <div className="flex-1 space-y-4 overflow-auto p-4">
+              <div className="min-h-0 flex-1 space-y-4 overflow-auto p-4">
                 {compileState.isCompiling ? null : (
                   <div
                     className={`rounded-lg border p-3 ${

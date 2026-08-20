@@ -94,7 +94,7 @@ export function HatsGrid({ categories, nativeAvailable }: HatsGridProps) {
             </p>
           )}
         </div>
-        <div className="flex-1 overflow-auto p-4">
+        <div className="min-h-0 flex-1 overflow-auto p-4">
           <div className="space-y-4">
             {filteredCategories.map((group) => (
               <div key={group.name}>

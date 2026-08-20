@@ -65,7 +65,7 @@ export function HatsContents({ categories, currentSlug, onSelect, onClose }: Hat
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="min-h-0 flex-1 overflow-y-auto p-4">
         <div className="space-y-5">
           {filteredCategories.map((group) => (
             <div key={group.name}>
