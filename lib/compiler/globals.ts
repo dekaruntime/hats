@@ -232,6 +232,23 @@ function renderAttributes(props: Record<string, unknown> | null | undefined): st
   return attrs.join('');
 }
 
+// Forward a `class` prop from a function-component caller onto the root HTML
+// element returned by that component. This makes utility-CSS scanning work for
+// components like `<Card class="bg-blue-300" />` without requiring every
+// component to manually thread `class` through its root node.
+function forwardClass(html: string, className: unknown): string {
+  if (!className || typeof html !== 'string' || html[0] !== '<') return html;
+  const escaped = String(className)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;');
+  return html.replace(/^<([^\s>\/]+)((?:\s[^>]*)?)(\/?>)/, (m, tag, attrs, close) => {
+    // If the component already placed a class on its root, assume it handled
+    // the prop explicitly and do not duplicate it.
+    if (/\sclass\s*=/.test(attrs)) return m;
+    return `<${tag}${attrs} class="${escaped}"${close}`;
+  });
+}
+
 function renderFallbackSync(fallback: unknown, error: unknown, ctx: RendererContext): string {
   let node = fallback;
   if (typeof fallback === 'function') {
@@ -417,7 +434,7 @@ function renderNodeSync(node: unknown, ctx: RendererContext): string {
       return handleRenderErrorSync((result as Record<string, unknown>).error ?? new Error(String(result)), ctx);
     }
 
-    const html = renderNodeSync(result, ctx);
+    const html = forwardClass(renderNodeSync(result, ctx), rest.class);
     if (directives.length === 0) return html;
 
     const islandName = tag.name || 'Anonymous';
@@ -515,7 +532,7 @@ async function renderNodeAsync(node: unknown, ctx: RendererContext): Promise<str
       return await handleRenderErrorAsync((result as Record<string, unknown>).error ?? new Error(String(result)), ctx);
     }
 
-    const html = await renderNodeAsync(result, ctx);
+    const html = forwardClass(await renderNodeAsync(result, ctx), rest.class);
     if (directives.length === 0) return html;
 
     const islandName = tag.name || 'Anonymous';
