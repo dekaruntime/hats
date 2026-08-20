@@ -1,0 +1,4 @@
+{
+  "title": "Self-closing tag followed by closing tag fails",
+  "stage": "parse"
+}

@@ -1,0 +1,5 @@
+{
+  "title": "Async method on struct fails at runtime",
+  "stage": "run",
+  "notes": "Async struct methods parse and typecheck but are not yet supported by the runtime."
+}

@@ -1,0 +1,5 @@
+{
+  "title": "Self-referencing const initializer fails",
+  "stage": "run",
+  "notes": ""
+}
