@@ -106,16 +106,18 @@ function parseNativeDiagnostics(stderr: string): NativeRunResult['diagnostics'] 
   }
 
   // Fallback: if no rich diagnostic was parsed, treat the first non-empty,
-  // non-bracketed line as a single-line diagnostic. This covers simple parser
+  // non-decorative line as a single-line diagnostic. This covers simple parser
   // errors like "Missing semicolon" or "DekaScript parameters require a type
-  // annotation" that the native CLI emits without position annotations.
+  // annotation" that the native CLI emits without position annotations, as well
+  // as emitter errors prefixed with `[transpile]`.
   if (diagnostics.length === 0) {
     const firstLine = lines.find((l) => {
       const trimmed = l.trim()
-      return trimmed.length > 0 && !trimmed.startsWith('[') && !trimmed.startsWith('Validation') && !trimmed.startsWith('❌')
+      return trimmed.length > 0 && !trimmed.startsWith('Validation') && !trimmed.startsWith('❌')
     })
     if (firstLine) {
-      diagnostics.push({ severity: 'error', message: firstLine.trim() })
+      const message = firstLine.trim().replace(/^\[\w+\]\s*/, '')
+      diagnostics.push({ severity: 'error', message })
     }
   }
 
