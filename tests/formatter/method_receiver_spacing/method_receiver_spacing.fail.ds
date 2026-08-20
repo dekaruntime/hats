@@ -1,0 +1,9 @@
+struct Point {
+  x: int,
+  y: int,
+}
+fn (p Point) sum(): int {
+  return p.x + p.y
+}
+let p = Point { x: 1, y: 2 }
+console.log(p.sum())

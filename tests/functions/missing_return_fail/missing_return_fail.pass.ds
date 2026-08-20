@@ -1,4 +1,0 @@
-fn answer(): number {
-  const x = 42
-}
-console.log(answer())

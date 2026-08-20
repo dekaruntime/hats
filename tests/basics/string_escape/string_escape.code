@@ -1,2 +1,0 @@
-const s = "a\nb"
-console.log(s)

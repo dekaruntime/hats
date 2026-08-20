@@ -1,5 +1,4 @@
 {
-  "title": "Async return value awaited",
-  "stage": "run",
-  "notes": ""
+  "title": "Return value from an async function is awaited",
+  "stage": "run"
 }

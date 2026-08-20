@@ -1,0 +1,5 @@
+{
+  "title": "Parameter missing a type annotation fails",
+  "stage": "parse",
+  "notes": ""
+}

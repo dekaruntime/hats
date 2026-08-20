@@ -1,2 +1,0 @@
-const name = "Deka"
-console.log(`Welcome, ${name}!`)

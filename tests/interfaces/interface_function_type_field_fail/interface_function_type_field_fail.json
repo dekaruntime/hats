@@ -1,0 +1,5 @@
+{
+  "title": "Function type field in interface is not supported",
+  "stage": "parse",
+  "expectedDiagnosticContains": "struct fields require an explicit type"
+}

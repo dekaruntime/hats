@@ -1,0 +1,6 @@
+{
+  "title": "Property access on null fails",
+  "stage": "run",
+  "expectedDiagnosticContains": "null is not an object",
+  "notes": "DekaScript objects may be null; property access throws."
+}

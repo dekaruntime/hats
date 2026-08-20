@@ -1,0 +1,6 @@
+{
+  "title": "Match on Result fails at runtime",
+  "stage": "run",
+  "expectedDiagnosticContains": "Ok is not defined",
+  "notes": "Result cases are not recognized as enum patterns."
+}

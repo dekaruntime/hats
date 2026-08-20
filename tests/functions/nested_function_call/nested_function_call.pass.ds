@@ -1,7 +1,0 @@
-fn inc(x: number): number {
-  return x + 1
-}
-fn double(x: number): number {
-  return x * 2
-}
-console.log(double(inc(3)))

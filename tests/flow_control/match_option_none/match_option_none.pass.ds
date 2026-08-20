@@ -1,7 +1,0 @@
-const maybe = Option.None
-const result = match (maybe) {
-  Some(value) => value,
-  None => "absent",
-  _ => "unknown"
-}
-console.log(result)

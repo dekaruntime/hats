@@ -1,2 +1,0 @@
-const parsed = JSON.parse("not json")
-console.log(parsed)

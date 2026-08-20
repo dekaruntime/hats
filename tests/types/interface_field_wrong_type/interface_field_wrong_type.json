@@ -1,0 +1,6 @@
+{
+  "title": "Object literal field with wrong type for interface fails",
+  "stage": "parse",
+  "expectedDiagnosticContains": "type mismatch",
+  "notes": "Interface field types are checked against object literals."
+}

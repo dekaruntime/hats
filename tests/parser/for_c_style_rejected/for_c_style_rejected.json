@@ -1,0 +1,5 @@
+{
+  "title": "C-style for loop is rejected",
+  "stage": "parse",
+  "expectedDiagnosticContains": "Expected `of` in DekaScript for-of loop"
+}

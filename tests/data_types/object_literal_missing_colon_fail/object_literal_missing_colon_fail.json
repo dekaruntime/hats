@@ -1,0 +1,5 @@
+{
+  "title": "Missing colon after object key fails",
+  "stage": "parse",
+  "notes": ""
+}

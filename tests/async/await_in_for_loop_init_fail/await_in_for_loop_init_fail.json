@@ -1,0 +1,4 @@
+{
+  "title": "await in a C-style for loop initializer fails",
+  "stage": "parse"
+}

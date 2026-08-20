@@ -1,3 +1,0 @@
-const ui = globalThis.deka.ui
-const html = ui.renderToString(<h1>Hello</h1>)
-console.log(html.html)

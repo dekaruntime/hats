@@ -1,6 +1,0 @@
-struct User {
-  name: string
-  email?: string
-}
-const u = User { name: "Deka", email: "hi@deka.gg" }
-console.log(u.name)

@@ -1,5 +1,5 @@
 {
-  "title": "JSX boolean attribute",
+  "title": "Undefined variable in boolean JSX attribute fails",
   "stage": "run",
-  "notes": ""
+  "notes": "A boolean JSX attribute expression referencing an undefined variable should fail at runtime."
 }

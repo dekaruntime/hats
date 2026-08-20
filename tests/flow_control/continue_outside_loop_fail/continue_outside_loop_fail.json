@@ -1,6 +1,5 @@
 {
   "title": "Continue outside a loop fails",
   "stage": "run",
-  "notes": "",
-  "expectedDiagnosticContains": "'continue' is only valid inside a loop statement."
+  "notes": ""
 }

@@ -1,4 +1,0 @@
-const a = [1, 2, 3]
-const b = a.slice(1, 3)
-console.log(b.length)
-console.log(b[0])

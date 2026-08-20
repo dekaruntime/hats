@@ -1,0 +1,5 @@
+{
+  "title": "Object literal missing a required field fails even with optional field present",
+  "stage": "parse",
+  "notes": ""
+}
