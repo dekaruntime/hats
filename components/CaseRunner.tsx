@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle2, List, XCircle } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, List, XCircle, ArrowRight } from 'lucide-react'
 import { EditorPanel } from './EditorPanel'
 import { HatsContents } from './HatsContents'
 import { TourOutputPanel } from './TourOutputPanel'
@@ -273,6 +273,15 @@ export function CaseRunner({ test, categories }: { test: HatsTest; categories: H
 
   const stage = determineStage(compileState.js, compileState.diagnostics ?? [])
 
+  const allTestSlugs = useMemo(
+    () => categories.flatMap((group) => group.tests.map((t) => t.slug)),
+    [categories]
+  )
+  const currentIndex = allTestSlugs.indexOf(test.slug)
+  const nextSlug = currentIndex >= 0 && currentIndex < allTestSlugs.length - 1
+    ? allTestSlugs[currentIndex + 1]
+    : undefined
+
   const result: RunResult = {
     ok: compileState.error === undefined && output.error === undefined && compileState.js !== undefined,
     stdout: output.stdout,
@@ -411,15 +420,42 @@ export function CaseRunner({ test, categories }: { test: HatsTest; categories: H
               </div>
 
               <div className="border-t border-border bg-card/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setContentsOpen(true)}
-                  className="w-full gap-1.5"
-                >
-                  <List className="h-4 w-4" />
-                  Contents
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setContentsOpen(true)}
+                    className="flex-1 gap-1.5"
+                  >
+                    <List className="h-4 w-4" />
+                    Contents
+                  </Button>
+                  {nextSlug ? (
+                    <Link href={`/case/${nextSlug}`} passHref legacyBehavior>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                        className="flex-1 gap-1.5"
+                      >
+                        <a>
+                          Next
+                          <ArrowRight className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled
+                      className="flex-1 gap-1.5"
+                    >
+                      Next
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </>
           )}
