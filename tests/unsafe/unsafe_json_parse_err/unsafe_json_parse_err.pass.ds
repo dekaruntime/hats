@@ -1,0 +1,3 @@
+const r = unsafe { JSON.parse("invalid json") }
+console.log(r.__case)
+console.log(r.error.message)
