@@ -1,8 +1,8 @@
-# HATS · Human Aided Test Suite
+# deka test suite
 
 Public conformance tests for [DekaScript](https://deka.gg).
 
-Live site: **https://hats.deka.gg**
+Live site: **https://testsuite.deka.gg**
 
 ## How it works
 
@@ -32,7 +32,7 @@ The filename of the `.ds` file states whether the test should **pass** or **fail
 
 ## Exact matching
 
-HATS uses exact string comparison for both stdout and formatted code. Every character matters, including trailing newlines. This makes the suite suitable for validating formatter behavior.
+The suite uses exact string comparison for both stdout and formatted code. Every character matters, including trailing newlines. This makes it suitable for validating formatter behavior.
 
 ## JSON metadata format
 
@@ -87,13 +87,13 @@ bun scripts/generate-tests.mjs
 
 ## Native-vs-wasm drift detection
 
-HATS can compare the wasm compiler against the matching native CLI downloaded from `releases.deka.gg`. On Cloudflare Workers Builds the linux-x64 binary currently fails with a `GLIBC_2.43` mismatch, so native drift detection is disabled in that environment and the site falls back to wasm-only results. See [dekaruntime/hats#1](https://github.com/dekaruntime/hats/issues/1).
+The site compares the wasm compiler against the matching native CLI downloaded from `releases.deka.gg`. On Cloudflare Workers Builds the linux-x64 binary currently fails with a `GLIBC_2.43` mismatch, so native drift detection is disabled in that environment and the site falls back to wasm-only results. See [dekaruntime/testsuite#1](https://github.com/dekaruntime/testsuite/issues/1).
 
-Current suite snapshot (runtime v0.23.3):
+Current suite snapshot (runtime v0.24.3):
 
-- 311 tests across 11 categories
-- 309 passing
-- 2 native/wasm divergences tracked in dekaruntime/deka#174, #175, #176
+- 561 tests across 13 categories
+- 201 expected-pass fixtures
+- 360 expected-fail fixtures
 
 ## Deployment
 
