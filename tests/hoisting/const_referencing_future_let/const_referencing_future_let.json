@@ -1,0 +1,5 @@
+{
+  "title": "const initializer referencing a future let binding fails at runtime.",
+  "stage": "run",
+  "notes": ""
+}

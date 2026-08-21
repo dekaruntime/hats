@@ -1,0 +1,6 @@
+{
+  "title": "Nested receiver method inside for is rejected.",
+  "stage": "parse",
+  "notes": "",
+  "expectedDiagnosticContains": "only allowed at the top level"
+}

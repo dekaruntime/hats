@@ -1,0 +1,6 @@
+{
+  "title": "Nested receiver method inside while is rejected.",
+  "stage": "parse",
+  "notes": "",
+  "expectedDiagnosticContains": "only allowed at the top level"
+}
