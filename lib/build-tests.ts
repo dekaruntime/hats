@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { loadWasmCompiler, compileWithWasm, formatDsWithWasm } from './build-wasm'
 import { prepareNativeCli, runNativeCli } from './build-native'
-import { runDekaJsDirect } from '@dekaruntime/web-ide-kit/runtime'
+import { runDekaJsDirect, runDekaProject } from '@dekaruntime/web-ide-kit/runtime'
 import { loadAllTests, type HatsCategory, type HatsTest, type HatsTestStage } from './tests'
 
 export type RuntimeStatus = 'pass' | 'fail'
@@ -79,8 +79,45 @@ function runtimeMatchesExpectation(
 
 async function runWasmTest(
   source: string,
-  slug: string
+  slug: string,
+  files?: Record<string, string>,
+  entryPath?: string
 ): Promise<RuntimeResult> {
+  const isProject = files && entryPath
+
+  if (isProject) {
+    const projectFiles = { [entryPath]: source, ...files }
+    const runResult = await runDekaProject(entryPath, projectFiles)
+    const compileResult = runResult.compileResult
+    const formatResult = formatDsWithWasm(globalHatsCompiler, source)
+
+    if (!compileResult.ok) {
+      return {
+        ok: false,
+        stage: determineStage(false, undefined, compileResult.diagnostics.find((d) => d.severity === 'error')?.message, compileResult.diagnostics),
+        stdout: '',
+        stderr: '',
+        formattedCode: formatResult.ok ? formatResult.code : undefined,
+        error: compileResult.diagnostics.find((d) => d.severity === 'error')?.message,
+        diagnostics: compileResult.diagnostics,
+      }
+    }
+
+    const diagnostics = compileResult.diagnostics.slice()
+    if (!runResult.ok && runResult.error) {
+      diagnostics.push({ severity: 'error', message: runResult.error })
+    }
+    return {
+      ok: runResult.ok,
+      stage: 'run',
+      stdout: runResult.stdout,
+      stderr: runResult.stderr,
+      formattedCode: formatResult.ok ? formatResult.code : undefined,
+      error: runResult.error,
+      diagnostics,
+    }
+  }
+
   const compileResult = compileWithWasm(globalHatsCompiler, source, `${slug}.ds`)
   const formatResult = formatDsWithWasm(globalHatsCompiler, source)
 
@@ -181,7 +218,7 @@ async function runAllTestsOnce(): Promise<HatsBuildResults> {
   for (const category of categories) {
     const tests: HatsTestWithBuildResult[] = []
     for (const test of category.tests) {
-      const wasmResult = await runWasmTest(test.source, test.slug)
+      const wasmResult = await runWasmTest(test.source, test.slug, test.files, test.entryPath)
       const nativeResult = nativeCliPath
         ? await runNativeTest(nativeCliPath, test.source, test.slug)
         : emptyNativeResult()

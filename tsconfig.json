@@ -19,9 +19,7 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "@dekaruntime/web-ide-kit": ["./vendor/web-ide-kit/src"],
-      "@dekaruntime/web-ide-kit/*": ["./vendor/web-ide-kit/src/*"]
+      "@/*": ["./*"]
     }
   },
   "include": [

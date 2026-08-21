@@ -11,6 +11,8 @@ export interface HatsTest {
   status: HatsTestStatus
   name: string
   source: string
+  files?: Record<string, string>
+  entryPath?: string
   title: string
   stage: HatsTestStage
   expectedStdout?: string
@@ -84,17 +86,29 @@ export function loadAllTests(): HatsCategory[] {
       const testDir = path.join(categoryDir, testName)
       const files = fs.readdirSync(testDir)
 
-      const dsFile = files.find((f) => parseStatusFromFilename(f))
-      if (!dsFile) continue
+      const dsFiles = files.filter((f) => f.endsWith('.ds'))
+      const entryFile = dsFiles.find((f) => parseStatusFromFilename(f))
+      if (!entryFile) continue
 
-      const status = parseStatusFromFilename(dsFile)!
-      const name = baseNameFromFilename(dsFile)
-      const source = readFile(testDir, dsFile)
+      const status = parseStatusFromFilename(entryFile)!
+      const name = baseNameFromFilename(entryFile)
+      const source = readFile(testDir, entryFile)
       if (source === undefined) continue
 
       const metadata = readMetadata(testDir, name)
       const expectedStdout = readFile(testDir, `${name}.stdout`)
       const expectedCode = readFile(testDir, `${name}.code`)
+
+      const extraDsFiles = dsFiles.filter((f) => f !== entryFile)
+      const filesRecord: Record<string, string> | undefined =
+        extraDsFiles.length > 0
+          ? Object.fromEntries(
+              extraDsFiles
+                .map((f) => [f, readFile(testDir, f)] as const)
+                .filter(([, content]) => content !== undefined)
+                .map(([f, content]) => [f, content as string])
+            )
+          : undefined
 
       tests.push({
         slug: slugFromParts(categoryName, testName),
@@ -102,6 +116,8 @@ export function loadAllTests(): HatsCategory[] {
         status,
         name: testName,
         source,
+        files: filesRecord,
+        entryPath: filesRecord ? entryFile : undefined,
         title: metadata.title ?? testName.replace(/_/g, ' '),
         stage: metadata.stage ?? 'run',
         expectedStdout,
