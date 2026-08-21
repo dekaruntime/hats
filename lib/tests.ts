@@ -48,6 +48,20 @@ function readFile(dir: string, filename: string): string | undefined {
   return fs.readFileSync(filePath, 'utf-8')
 }
 
+function collectDsFiles(dir: string, relativeTo: string): string[] {
+  const results: string[] = []
+  const entries = fs.readdirSync(dir, { withFileTypes: true })
+  for (const entry of entries) {
+    const relativePath = path.relative(relativeTo, path.join(dir, entry.name)).replace(/\\/g, '/')
+    if (entry.isDirectory()) {
+      results.push(...collectDsFiles(path.join(dir, entry.name), relativeTo))
+    } else if (entry.isFile() && entry.name.endsWith('.ds')) {
+      results.push(relativePath)
+    }
+  }
+  return results
+}
+
 function readMetadata(dir: string, name: string): Partial<HatsTest> {
   const jsonPath = path.join(dir, `${name}.json`)
   if (!fs.existsSync(jsonPath)) return {}
@@ -84,10 +98,8 @@ export function loadAllTests(): HatsCategory[] {
       if (!testEntry.isDirectory()) continue
       const testName = testEntry.name
       const testDir = path.join(categoryDir, testName)
-      const files = fs.readdirSync(testDir)
-
-      const dsFiles = files.filter((f) => f.endsWith('.ds'))
-      const entryFile = dsFiles.find((f) => parseStatusFromFilename(f))
+      const dsFiles = collectDsFiles(testDir, testDir)
+      const entryFile = dsFiles.find((f) => parseStatusFromFilename(f) && !f.includes('/'))
       if (!entryFile) continue
 
       const status = parseStatusFromFilename(entryFile)!
@@ -117,7 +129,7 @@ export function loadAllTests(): HatsCategory[] {
         name: testName,
         source,
         files: filesRecord,
-        entryPath: filesRecord ? entryFile : undefined,
+        entryPath: entryFile,
         title: metadata.title ?? testName.replace(/_/g, ' '),
         stage: metadata.stage ?? 'run',
         expectedStdout,

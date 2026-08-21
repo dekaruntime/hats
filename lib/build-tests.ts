@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { loadWasmCompiler, compileWithWasm, formatDsWithWasm } from './build-wasm'
 import { prepareNativeCli, runNativeCli } from './build-native'
-import { runDekaJsDirect, runDekaProject } from '@dekaruntime/web-ide-kit/runtime'
+import { runDekaJsDirect, runDekaProject, setCompilerArtifactPath } from '@dekaruntime/web-ide-kit/runtime'
 import { loadAllTests, type HatsCategory, type HatsTest, type HatsTestStage } from './tests'
 
 export type RuntimeStatus = 'pass' | 'fail'
@@ -202,9 +202,12 @@ export interface HatsBuildResults {
   categories: HatsCategoryWithResults[]
 }
 
+const WASM_COMPILER_MANIFEST_URL = 'https://wasm.deka.gg/latest/deka-compiler-artifact.json'
+
 async function runAllTestsOnce(): Promise<HatsBuildResults> {
+  setCompilerArtifactPath(WASM_COMPILER_MANIFEST_URL)
   globalHatsCompiler = await loadWasmCompiler()
-  const wasmManifest = (await (await fetch('https://wasm.deka.gg/latest/deka-compiler-artifact.json')).json()) as {
+  const wasmManifest = (await (await fetch(WASM_COMPILER_MANIFEST_URL)).json()) as {
     compiler: { version: string }
   }
   console.log(`[hats build] wasm compiler version=${wasmManifest.compiler.version}`)
