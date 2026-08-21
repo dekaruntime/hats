@@ -1,0 +1,5 @@
+{
+  "title": "Re-export from relative module",
+  "stage": "run",
+  "notes": "Re-export syntax should parse without importing into local scope."
+}

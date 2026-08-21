@@ -1,0 +1,6 @@
+{
+  "title": "Export alias not yet supported",
+  "stage": "parse",
+  "expectedDiagnosticContains": "Unsupported export alias",
+  "notes": "export { a as b } parses but validation rejects aliases in Phase 1."
+}

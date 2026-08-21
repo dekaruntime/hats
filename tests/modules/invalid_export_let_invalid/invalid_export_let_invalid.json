@@ -1,0 +1,6 @@
+{
+  "title": "Invalid export let declaration",
+  "stage": "parse",
+  "expectedDiagnosticContains": "Unsupported export syntax",
+  "notes": "Only export fn, export const, and export { ... } are supported."
+}

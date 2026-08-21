@@ -1,0 +1,5 @@
+{
+  "title": "Export fn declaration",
+  "stage": "run",
+  "notes": "Basic export fn should parse, typecheck, and emit."
+}

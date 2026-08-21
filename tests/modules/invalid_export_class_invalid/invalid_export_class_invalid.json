@@ -1,0 +1,6 @@
+{
+  "title": "Invalid export class declaration",
+  "stage": "parse",
+  "expectedDiagnosticContains": "Unsupported export syntax",
+  "notes": "Classes are not supported in DekaScript."
+}

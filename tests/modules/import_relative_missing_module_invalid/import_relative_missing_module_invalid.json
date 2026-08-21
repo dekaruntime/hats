@@ -1,0 +1,6 @@
+{
+  "title": "Import from unresolved relative module",
+  "stage": "parse",
+  "expectedDiagnosticContains": "Failed to read module",
+  "notes": "Single-file wasm compiler cannot resolve relative imports; project mode is required."
+}

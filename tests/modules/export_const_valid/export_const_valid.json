@@ -1,0 +1,5 @@
+{
+  "title": "Export const declaration",
+  "stage": "run",
+  "notes": "Basic export const should parse, typecheck, and emit."
+}

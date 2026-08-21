@@ -1,0 +1,5 @@
+{
+  "title": "Export named list",
+  "stage": "run",
+  "notes": "Named export list should parse, typecheck, and emit."
+}
