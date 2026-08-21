@@ -22,10 +22,7 @@ export interface NodeRunResult {
 export function runJsInNode(jsCode: string): NodeRunResult {
   const tmpDir = fs.mkdtempSync(path.join(tmpdir(), 'hats-node-run-'))
   const outputPath = path.join(tmpDir, 'test.js')
-  // The compiler emits `const {URL, fetch, ...} = unsafe;` inside unsafe blocks.
-  // In the browser the site provides this object; in Node we alias it to the
-  // global object so the same browser APIs are available.
-  fs.writeFileSync(outputPath, `globalThis.unsafe = globalThis;\n${jsCode}`)
+  fs.writeFileSync(outputPath, jsCode)
   fs.writeFileSync(path.join(tmpDir, 'package.json'), JSON.stringify({ type: 'module' }))
 
   try {
