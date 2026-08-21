@@ -1,0 +1,3 @@
+const r = unsafe { new URL("://invalid") }
+console.log(r.__case)
+console.log(r.error.message)

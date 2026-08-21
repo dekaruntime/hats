@@ -1,0 +1,6 @@
+const r = unsafe {
+  const obj = { a: { b: 3 } };
+  return obj.a.b;
+}
+console.log(r.__case)
+console.log(r.value)

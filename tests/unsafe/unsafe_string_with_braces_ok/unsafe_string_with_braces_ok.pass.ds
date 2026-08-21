@@ -1,0 +1,6 @@
+const r = unsafe {
+  const s = "this } is not { a brace";
+  return s.length;
+}
+console.log(r.__case)
+console.log(r.value)
