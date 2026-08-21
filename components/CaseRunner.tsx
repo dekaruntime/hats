@@ -10,6 +10,7 @@ import { EditorPanel, TourOutputPanel } from '@dekaruntime/web-ide-kit/ui'
 import {
   compileDeka,
   runDekaJs,
+  runDekaProject,
   formatDekaDs,
   formatDekaJs,
   formatRawJs,
@@ -133,6 +134,8 @@ export function CaseRunner({ test, categories }: { test: HatsTest; categories: H
       setOutput((prev) => ({ ...prev, error: undefined }))
 
       try {
+        const isProject = test.files && Object.keys(test.files).length > 0 && test.entryPath
+
         // Normalize the source with the formatter before compiling so that
         // expected-code comparisons always use the canonical formatted shape,
         // even for tests that fail at parse/typecheck.
@@ -141,6 +144,55 @@ export function CaseRunner({ test, categories }: { test: HatsTest; categories: H
           dsFormatResult.ok && dsFormatResult.code ? dsFormatResult.code : currentSource
         if (sourceToCompile !== currentSource) {
           setSource(sourceToCompile)
+        }
+
+        if (isProject) {
+          const projectFiles: Record<string, string> = {
+            [test.entryPath!]: sourceToCompile,
+            ...test.files,
+          }
+
+          const runResult = await runDekaProject(test.entryPath!, projectFiles)
+          if (!isCurrentSource()) return
+
+          const compileResult = runResult.compileResult
+          const normalizedEntry = test.entryPath!.replace(/\\/g, '/').replace(/^\.\//, '')
+          const entryModule = compileResult.ok ? compileResult.modules[normalizedEntry] : undefined
+          const entryJs = entryModule?.code
+
+          if (!compileResult.ok || !entryJs) {
+            setCompileState({
+              isCompiling: false,
+              error: compileResult.diagnostics.find((d) => d.severity === 'error')?.message
+                ?? runResult.error
+                ?? 'Project compilation failed with no error message.',
+              diagnostics: compileResult.diagnostics,
+              compiler: undefined,
+            })
+            setOutput({
+              stdout: '',
+              stderr: '',
+              error: runResult.error || 'Project compilation failed.',
+            })
+            return
+          }
+
+          const strippedJs = formatRawJs(entryJs)
+          const formatResult = await formatDekaJs(strippedJs)
+          setCompileState({
+            js: entryJs,
+            displayJs: formatResult.ok && formatResult.code ? formatResult.code : strippedJs,
+            isCompiling: false,
+            diagnostics: compileResult.diagnostics,
+            compiler: undefined,
+          })
+
+          setOutput({
+            stdout: runResult.stdout,
+            stderr: runResult.stderr,
+            error: runResult.error,
+          })
+          return
         }
 
         const compileResult = await compileDeka(sourceToCompile, `${test.slug}.ds`)

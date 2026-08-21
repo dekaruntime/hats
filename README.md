@@ -87,7 +87,7 @@ bun scripts/generate-tests.mjs
 
 ## Native-vs-wasm drift detection
 
-The site compares the wasm compiler against the matching native CLI downloaded from `releases.deka.gg`. On Cloudflare Workers Builds the linux-x64 binary currently fails with a `GLIBC_2.43` mismatch, so native drift detection is disabled in that environment and the site falls back to wasm-only results. See [dekaruntime/testsuite#1](https://github.com/dekaruntime/testsuite/issues/1).
+The site compares the wasm compiler against the matching native CLI downloaded from `releases.deka.gg`. The build runs on our self-hosted `bugsy` runner (macOS ARM64), so the native CLI executes in the same environment and full wasm/native drift detection is enabled. Only tests where wasm and native genuinely disagree are shown as divergent (pink).
 
 Current suite snapshot (runtime v0.24.3):
 
