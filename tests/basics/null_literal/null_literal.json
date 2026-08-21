@@ -1,5 +1,6 @@
 {
-  "title": "Null literal",
-  "stage": "run",
-  "notes": ""
+  "title": "Null literal is rejected",
+  "stage": "parse",
+  "expectedDiagnosticContains": "Null literals are not allowed",
+  "notes": "DekaScript uses Option<T> instead of null."
 }
