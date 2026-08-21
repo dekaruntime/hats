@@ -1,0 +1,6 @@
+{
+  "title": "Nested receiver method is rejected",
+  "stage": "parse",
+  "expectedDiagnosticContains": "only allowed at the top level",
+  "notes": "Receiver methods must be top-level so they are collected and registered after struct factories."
+}
