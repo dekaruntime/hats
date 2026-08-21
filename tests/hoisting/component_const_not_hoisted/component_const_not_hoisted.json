@@ -1,5 +1,6 @@
 {
   "title": "const component is not hoisted above its use",
-  "stage": "run",
-  "notes": "Components declared with const behave like const and stay in source order."
+  "stage": "parse",
+  "notes": "Components declared with const behave like const and stay in source order.",
+  "expectedDiagnosticContains": "not initialized until line"
 }
