@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { execSync } from 'child_process'
 import os from 'os'
-import { runDekaJsDirect } from '@dekaruntime/web-ide-kit/runtime'
+import { runJsInNode } from './run-js'
 
 const RELEASES_BASE = 'https://releases.deka.gg'
 
@@ -212,7 +212,7 @@ export async function runNativeCli(
     }
 
     const jsCode = fs.readFileSync(outputPath, 'utf-8')
-    const runResult = await runDekaJsDirect(jsCode, { cwd: '/hats', env: {} })
+    const runResult = runJsInNode(jsCode)
 
     return {
       ok: runResult.ok,

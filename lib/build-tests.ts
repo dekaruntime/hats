@@ -2,7 +2,8 @@ import fs from 'fs'
 import path from 'path'
 import { loadWasmCompiler, compileWithWasm, formatDsWithWasm } from './build-wasm'
 import { prepareNativeCli, runNativeCli } from './build-native'
-import { runDekaJsDirect, runDekaProject, setCompilerArtifactPath } from '@dekaruntime/web-ide-kit/runtime'
+import { runJsInNode } from './run-js'
+import { runDekaProject, setCompilerArtifactPath } from '@dekaruntime/web-ide-kit/runtime'
 import { loadAllTests, type HatsCategory, type HatsTest, type HatsTestStage } from './tests'
 
 export type RuntimeStatus = 'pass' | 'fail'
@@ -133,7 +134,7 @@ async function runWasmTest(
     }
   }
 
-  const runResult = await runDekaJsDirect(compileResult.js)
+  const runResult = runJsInNode(compileResult.js)
   const diagnostics = compileResult.diagnostics.slice()
   if (!runResult.ok && runResult.error) {
     diagnostics.push({ severity: 'error', message: runResult.error })
