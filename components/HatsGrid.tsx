@@ -7,6 +7,7 @@ import type { HatsCategoryWithResults, HatsTestWithBuildResult } from '@/lib/bui
 interface HatsGridProps {
   categories: HatsCategoryWithResults[]
   nativeAvailable: boolean
+  version: string
 }
 
 export function statusColor(status: 'pass' | 'fail' | 'divergent'): string {
@@ -33,7 +34,7 @@ function testMatches(query: string, test: HatsTestWithBuildResult): boolean {
   )
 }
 
-export function HatsGrid({ categories, nativeAvailable }: HatsGridProps) {
+export function HatsGrid({ categories, nativeAvailable, version }: HatsGridProps) {
   const [query, setQuery] = useState('')
   const normalizedQuery = normalizeSearch(query)
 
@@ -66,7 +67,7 @@ export function HatsGrid({ categories, nativeAvailable }: HatsGridProps) {
         </div>
         <div className="flex items-center gap-4">
           <p className="text-xs text-muted-foreground">
-            {passing} passing · {failing} failing · {divergent} drift · {total} tests
+            deka v{version} · {passing} passing · {failing} failing · {divergent} drift · {total} tests
             {!nativeAvailable && (
               <span className="ml-2 text-amber-500">native runtime unavailable</span>
             )}

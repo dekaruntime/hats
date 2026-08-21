@@ -201,6 +201,7 @@ let loadAndRunPromise: Promise<HatsBuildResults> | null = null
 
 export interface HatsBuildResults {
   nativeAvailable: boolean
+  version: string
   categories: HatsCategoryWithResults[]
 }
 
@@ -212,8 +213,9 @@ async function runAllTestsOnce(): Promise<HatsBuildResults> {
   const wasmManifest = (await (await fetch(WASM_COMPILER_MANIFEST_URL)).json()) as {
     compiler: { version: string }
   }
-  console.log(`[hats build] wasm compiler version=${wasmManifest.compiler.version}`)
-  const nativeCliPath = await prepareNativeCli(wasmManifest.compiler.version)
+  const version = wasmManifest.compiler.version
+  console.log(`[hats build] wasm compiler version=${version}`)
+  const nativeCliPath = await prepareNativeCli(version)
 
   const categories = loadAllTests()
 
@@ -243,7 +245,7 @@ async function runAllTestsOnce(): Promise<HatsBuildResults> {
     results.push({ ...category, tests })
   }
 
-  return { nativeAvailable, categories: results }
+  return { nativeAvailable, version, categories: results }
 }
 
 export async function loadAndRunAllTests(): Promise<HatsBuildResults> {
@@ -262,7 +264,7 @@ export async function loadBuildResults(): Promise<HatsBuildResults> {
   const resultsPath = path.join(process.cwd(), 'public', 'hats-results.json')
   if (fs.existsSync(resultsPath)) {
     const raw = JSON.parse(fs.readFileSync(resultsPath, 'utf-8'))
-    return { nativeAvailable: raw.nativeAvailable, categories: raw.categories }
+    return { nativeAvailable: raw.nativeAvailable, version: raw.version ?? 'unknown', categories: raw.categories }
   }
   return loadAndRunAllTests()
 }

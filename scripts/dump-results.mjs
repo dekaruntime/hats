@@ -2,9 +2,9 @@ import fs from 'fs'
 import path from 'path'
 import { loadAndRunAllTests } from '../lib/build-tests.ts'
 
-const { nativeAvailable, categories } = await loadAndRunAllTests()
+const { nativeAvailable, version, categories } = await loadAndRunAllTests()
 
-console.log(`[hats] nativeAvailable=${nativeAvailable}`)
+console.log(`[hats] nativeAvailable=${nativeAvailable} version=${version}`)
 
 for (const category of categories) {
   for (const test of category.tests) {
@@ -18,5 +18,5 @@ for (const category of categories) {
 // full conformance suite inside the Next.js SSG environment.
 const outPath = path.join(process.cwd(), 'public', 'hats-results.json')
 fs.mkdirSync(path.dirname(outPath), { recursive: true })
-fs.writeFileSync(outPath, JSON.stringify({ nativeAvailable, categories }, null, 2))
+fs.writeFileSync(outPath, JSON.stringify({ nativeAvailable, version, categories }, null, 2))
 console.log(`[hats] wrote ${outPath}`)
