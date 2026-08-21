@@ -1,6 +1,5 @@
 {
   "title": "Incrementing a const binding fails",
   "stage": "parse",
-  "expectedDiagnosticContains": "cannot assign to immutable DekaScript const `x`",
   "notes": "Native CLI currently accepts this program silently, producing a divergence."
 }

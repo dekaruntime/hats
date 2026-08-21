@@ -1,5 +1,7 @@
 {
   "title": "Null literal",
-  "stage": "run",
-  "notes": ""
+  "stage": "parse",
+  "notes": "",
+  "status": "fail",
+  "expectedDiagnosticContains": "Null literals are not allowed in DekaScript"
 }
