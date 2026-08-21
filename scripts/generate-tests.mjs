@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { loadWasmCompiler, compileWithWasm, formatDsWithWasm } from '../lib/build-wasm.ts'
-import { runDekaJsDirect } from '../lib/compiler/runtime.ts'
+import { runDekaJsDirect } from '@dekaruntime/web-ide-kit/runtime'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const testsDir = path.join(__dirname, '..', 'tests')
@@ -1027,6 +1027,34 @@ add('async', 'await_outside_async_fail', {
 console.log(x)
 `,
   title: 'Await outside an async function fails',
+})
+
+// --- unsafe / JS interop ---
+
+add('unsafe', 'unsafe_arithmetic_ok', {
+  status: 'pass',
+  source: `const r = unsafe { 2 + 3 }
+console.log(r.__case)
+console.log(r.value)
+`,
+  title: 'unsafe block returns Result.Ok for plain arithmetic',
+})
+
+add('unsafe', 'unsafe_panic_err', {
+  status: 'pass',
+  source: `const r = unsafe { deka.panic("boom") }
+console.log(r.__case)
+console.log(r.error.message)
+`,
+  title: 'unsafe block returns Result.Err on thrown error',
+})
+
+add('unsafe', 'unsafe_catch_rejected_fail', {
+  status: 'fail',
+  source: `const r = unsafe { 1 } catch (e) { 2 }
+console.log(r)
+`,
+  title: 'Explicit catch clause is rejected in unsafe',
 })
 
 // ---------------------------------------------------------------------------
