@@ -137,18 +137,45 @@ function removeTempDir(tmpDir: string): void {
   }
 }
 
+function writeProjectFiles(tmpDir: string, entryPath: string, source: string, files?: Record<string, string>): { inputPath: string; outputPath: string; isProject: boolean } {
+  const isProject = files && Object.keys(files).length > 0
+  const outputPath = path.join(tmpDir, 'test.js')
+
+  if (!isProject) {
+    const inputPath = path.join(tmpDir, 'test.ds')
+    fs.writeFileSync(inputPath, source)
+    return { inputPath, outputPath, isProject: false }
+  }
+
+  // Multi-file project: write all modules into the temp dir and mirror the
+  // relative paths from the test fixture. Then copy the entry module to
+  // main.ds so `deka transpile <dir> --bundle` has a discoverable entry point.
+  fs.writeFileSync(path.join(tmpDir, entryPath), source)
+  for (const [filePath, content] of Object.entries(files!)) {
+    const fullPath = path.join(tmpDir, filePath)
+    fs.mkdirSync(path.dirname(fullPath), { recursive: true })
+    fs.writeFileSync(fullPath, content)
+  }
+
+  const entryBase = path.basename(entryPath)
+  const isNamedEntry = ['main.ds', 'index.ds', 'app.ds'].includes(entryBase)
+  if (!isNamedEntry) {
+    fs.writeFileSync(path.join(tmpDir, 'main.ds'), source)
+  }
+
+  return { inputPath: tmpDir, outputPath, isProject: true }
+}
+
 export async function runNativeCli(
   cliPath: string,
   source: string,
-  _baseDir?: string
+  entryPath?: string,
+  files?: Record<string, string>
 ): Promise<NativeRunResult> {
   const tmpDir = createPrivateTempDir()
 
   try {
-    const inputPath = path.join(tmpDir, 'test.ds')
-    const outputPath = path.join(tmpDir, 'test.js')
-
-    fs.writeFileSync(inputPath, source)
+    const { inputPath, outputPath, isProject } = writeProjectFiles(tmpDir, entryPath ?? 'test.ds', source, files)
 
     // Ensure bun/node treat the emitted JS as an ES module, matching how wasm runs it.
     fs.writeFileSync(path.join(tmpDir, 'package.json'), JSON.stringify({ type: 'module' }))
@@ -157,7 +184,10 @@ export async function runNativeCli(
     let transpileError = ''
 
     try {
-      execSync(`"${cliPath}" transpile "${inputPath}" --out "${outputPath}"`, {
+      const command = isProject
+        ? `"${cliPath}" transpile "${inputPath}" --bundle --out "${outputPath}"`
+        : `"${cliPath}" transpile "${inputPath}" --out "${outputPath}"`
+      execSync(command, {
         cwd: tmpDir,
         encoding: 'utf-8',
         timeout: 30000,
