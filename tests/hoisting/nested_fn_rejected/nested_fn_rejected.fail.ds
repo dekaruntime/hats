@@ -1,0 +1,5 @@
+if (true) {
+  fn helper(): int {
+    return 1
+  }
+}
