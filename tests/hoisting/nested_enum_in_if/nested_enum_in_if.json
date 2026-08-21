@@ -1,0 +1,6 @@
+{
+  "title": "Nested enum inside if is rejected.",
+  "stage": "parse",
+  "notes": "",
+  "expectedDiagnosticContains": "only allowed at the top level"
+}

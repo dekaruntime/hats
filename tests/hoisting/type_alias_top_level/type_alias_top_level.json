@@ -1,0 +1,5 @@
+{
+  "title": "type aliases are allowed at the top level.",
+  "stage": "run",
+  "notes": ""
+}

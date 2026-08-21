@@ -1,0 +1,5 @@
+{
+  "title": "Embedded struct methods are promoted and available on the embedder.",
+  "stage": "run",
+  "notes": ""
+}
