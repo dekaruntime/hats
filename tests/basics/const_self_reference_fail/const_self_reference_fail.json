@@ -1,5 +1,6 @@
 {
   "title": "Self-referencing const initializer fails",
-  "stage": "run",
-  "notes": ""
+  "stage": "parse",
+  "notes": "",
+  "expectedDiagnosticContains": "cannot be used in its own initializer"
 }

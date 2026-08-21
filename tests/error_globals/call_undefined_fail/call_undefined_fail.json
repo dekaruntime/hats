@@ -1,6 +1,6 @@
 {
   "title": "Calling undefined as a function fails",
-  "stage": "run",
-  "expectedDiagnosticContains": "is not a function",
+  "stage": "parse",
+  "expectedDiagnosticContains": "The `undefined` pseudo-literal is not allowed in DekaScript",
   "notes": ""
 }

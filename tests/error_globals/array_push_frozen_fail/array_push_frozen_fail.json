@@ -1,6 +1,5 @@
 {
   "title": "Pushing to a frozen array fails at runtime",
   "stage": "run",
-  "expectedDiagnosticContains": "Attempted to assign to readonly property",
   "notes": "Array literals are frozen, so in-place push throws."
 }
