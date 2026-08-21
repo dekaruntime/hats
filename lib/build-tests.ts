@@ -152,9 +152,11 @@ async function runWasmTest(
 async function runNativeTest(
   cliPath: string,
   source: string,
-  slug: string
+  slug: string,
+  files?: Record<string, string>,
+  entryPath?: string
 ): Promise<RuntimeResult> {
-  const nativeResult = await runNativeCli(cliPath, source)
+  const nativeResult = await runNativeCli(cliPath, source, entryPath, files)
 
   // Native transpile does not expose per-stage diagnostics the same way as wasm.
   // If transpilation produced emitted JS, any remaining failure is a runtime
@@ -223,7 +225,7 @@ async function runAllTestsOnce(): Promise<HatsBuildResults> {
     for (const test of category.tests) {
       const wasmResult = await runWasmTest(test.source, test.slug, test.files, test.entryPath)
       const nativeResult = nativeCliPath
-        ? await runNativeTest(nativeCliPath, test.source, test.slug)
+        ? await runNativeTest(nativeCliPath, test.source, test.slug, test.files, test.entryPath)
         : emptyNativeResult()
 
       const wasmMatches = runtimeMatchesExpectation(test, wasmResult)
