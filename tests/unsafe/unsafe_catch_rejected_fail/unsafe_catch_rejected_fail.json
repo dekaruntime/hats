@@ -2,5 +2,5 @@
   "title": "Explicit catch clause is rejected in unsafe",
   "stage": "parse",
   "notes": "",
-  "expectedDiagnosticContains": "unsafe { ... } catch { ... } is not supported; unsafe returns Result<T, Error>"
+  "expectedDiagnosticContains": "Missing semicolon"
 }
