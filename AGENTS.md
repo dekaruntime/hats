@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Release workflow
 
-Every code change that should go live on https://hats.deka.gg must be merged to
+Every code change that should go live on https://testsuite.deka.gg must be merged to
 `main` through a pull request. Direct pushes to `main` do not trigger a deploy.
 
 1. Create a branch: `git checkout -b agent/<name>/<topic>`.
@@ -18,6 +18,6 @@ Every code change that should go live on https://hats.deka.gg must be merged to
 3. Commit and push the branch.
 4. Open a PR against `main` with `gh pr create --base main`.
 5. Merge the PR with `gh pr merge <n> --merge`.
-6. The `Deploy hats.deka.gg` action runs automatically on `main`; watch it with
+6. The `Deploy deka test suite` action runs automatically on `main`; watch it with
    `gh run watch <id>`.
-7. Verify the change at https://hats.deka.gg after the action succeeds.
+7. Verify the change at https://testsuite.deka.gg after the action succeeds.
