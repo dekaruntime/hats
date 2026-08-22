@@ -1,5 +1,23 @@
 const MANIFEST_URL = 'https://wasm.deka.gg/latest/deka-compiler-artifact.json'
 
+/**
+ * Where the compiler comes from.
+ *
+ * By default the published artifact, which is what CI and the deployed site
+ * should always test against. But regenerating fixtures for an unreleased
+ * runtime change needs the compiler from that change, and a fixture
+ * regenerated against the published wasm silently encodes the OLD compiler's
+ * behaviour -- the diff looks plausible and is wrong.
+ *
+ * DEKA_WASM points at a locally built deka_compiler.wasm, e.g.
+ *   DEKA_WASM=../deka/target/wasm32-unknown-unknown/release/deka_compiler_wasm.wasm \
+ *     bun scripts/regen-fixtures.mjs
+ *
+ * The source is always logged so a regeneration can never be mistaken for one
+ * done against a different compiler.
+ */
+const LOCAL_WASM = typeof process !== 'undefined' ? process.env?.DEKA_WASM : undefined
+
 interface WasmExports {
   memory: WebAssembly.Memory
   deka_compiler_alloc: (size: number) => number
@@ -41,6 +59,24 @@ const textEncoder = new TextEncoder()
 const textDecoder = new TextDecoder()
 
 export async function loadWasmCompiler(): Promise<WasmCompiler> {
+  if (LOCAL_WASM) {
+    const fs = await import('node:fs/promises')
+    const path = await import('node:path')
+    const resolved = path.resolve(LOCAL_WASM)
+    let bytes: Buffer
+    try {
+      bytes = await fs.readFile(resolved)
+    } catch (err) {
+      throw new Error(
+        `DEKA_WASM is set to ${resolved} but that file could not be read: ${String(err)}`
+      )
+    }
+    console.log(`[build-wasm] using local compiler: ${resolved} (${bytes.byteLength} bytes)`)
+    const localModule = await WebAssembly.compile(bytes)
+    const localInstance = await WebAssembly.instantiate(localModule, {})
+    return { exports: localInstance.exports as unknown as WasmExports }
+  }
+
   const manifestRes = await fetch(MANIFEST_URL)
   if (!manifestRes.ok) {
     throw new Error(`Failed to fetch compiler manifest: ${manifestRes.status}`)
@@ -55,6 +91,7 @@ export async function loadWasmCompiler(): Promise<WasmCompiler> {
     throw new Error(`Failed to fetch compiler wasm: ${wasmRes.status}`)
   }
   const bytes = await wasmRes.arrayBuffer()
+  console.log(`[build-wasm] using published compiler: ${wasmUrl} (${bytes.byteLength} bytes)`)
 
   const wasmModule = await WebAssembly.compile(bytes)
   const instance = await WebAssembly.instantiate(wasmModule, {})

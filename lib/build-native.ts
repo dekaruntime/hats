@@ -34,6 +34,30 @@ function getPlatformBinaryName(): string | null {
 export async function prepareNativeCli(version: string): Promise<string | null> {
   if (nativeCliPath) return nativeCliPath
 
+  // Both compilers this suite compares must come from the SAME build. The
+  // native CLI is normally downloaded from releases.deka.gg and the wasm from
+  // wasm.deka.gg, which is right for CI but wrong when validating an
+  // unreleased runtime change: the wasm side picks up the change and the
+  // native side does not, and every type-name difference shows up as a
+  // spurious native/wasm divergence.
+  //
+  // DEKA_NATIVE is the counterpart to DEKA_WASM in lib/build-wasm.ts. Set both
+  // to the same build:
+  //   DEKA_NATIVE=../deka/target/release/cli \
+  //   DEKA_WASM=../deka/target/wasm32-unknown-unknown/release/deka_compiler_wasm.wasm \
+  //     bun scripts/run-tests.mjs
+  const localNative = process.env?.DEKA_NATIVE
+  if (localNative) {
+    const resolved = path.resolve(localNative)
+    if (!fs.existsSync(resolved)) {
+      throw new Error(`DEKA_NATIVE is set to ${resolved} but that file does not exist`)
+    }
+    fs.chmodSync(resolved, 0o755)
+    console.log(`[hats] using local native CLI: ${resolved}`)
+    nativeCliPath = resolved
+    return nativeCliPath
+  }
+
   const binaryName = getPlatformBinaryName()
   if (!binaryName) {
     console.warn(`[hats] native CLI not available for ${os.platform()}-${os.arch()}; skipping native drift checks`)
