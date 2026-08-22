@@ -56,7 +56,7 @@ export async function loadWasmCompiler(): Promise<WasmCompiler> {
       )
     }
     console.log(`[build-wasm] using local compiler: ${resolved} (${bytes.byteLength} bytes)`)
-    const localModule = await WebAssembly.compile(bytes)
+    const localModule = await WebAssembly.compile(new Uint8Array(bytes))
     const localInstance = await WebAssembly.instantiate(localModule, {})
     return { exports: localInstance.exports as unknown as WasmExports }
   }

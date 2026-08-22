@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { spawnSync } from 'child_process'
 import type { Browser, Page } from 'playwright'
 import { compileDekaProject } from '@dekaruntime/web-ide-kit/runtime'
 import type { HatsTestStage } from './tests'
@@ -55,25 +56,13 @@ async function ensureHarnessBundle(): Promise<string> {
   const outPath = harnessPath()
   fs.mkdirSync(path.dirname(outPath), { recursive: true })
   const entry = path.join(process.cwd(), 'lib', 'browser-harness-entry.ts')
-  const proc = Bun.spawn({
-    cmd: [
-      'bun',
-      'build',
-      entry,
-      '--outfile',
-      outPath,
-      '--format',
-      'iife',
-      '--target',
-      'browser',
-    ],
-    stdout: 'pipe',
-    stderr: 'pipe',
-  })
-  const code = await proc.exited
-  if (code !== 0) {
-    const err = await new Response(proc.stderr).text()
-    throw new Error(`failed to bundle browser harness: ${err}`)
+  const bundled = spawnSync(
+    'bun',
+    ['build', entry, '--outfile', outPath, '--format', 'iife', '--target', 'browser'],
+    { encoding: 'utf-8' }
+  )
+  if (bundled.status !== 0) {
+    throw new Error(`failed to bundle browser harness: ${bundled.stderr || bundled.stdout}`)
   }
   return outPath
 }
@@ -117,7 +106,16 @@ export async function runCompiledJsInBrowser(jsCode: string): Promise<BrowserRun
 
   try {
     const result = await page.evaluate(async (code: string) => {
-      const run = (globalThis as { __dekaRunJs: (js: string) => Promise<{ ok: boolean; stdout: string; stderr: string; error?: string }> }).__dekaRunJs
+      const run = (
+        globalThis as unknown as {
+          __dekaRunJs: (js: string) => Promise<{
+            ok: boolean
+            stdout: string
+            stderr: string
+            error?: string
+          }>
+        }
+      ).__dekaRunJs
       return await run(code)
     }, jsCode)
 
