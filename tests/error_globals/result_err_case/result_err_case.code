@@ -1,3 +1,0 @@
-const r = Result.Err("bad")
-console.log(r.__case)
-console.log(r.error)

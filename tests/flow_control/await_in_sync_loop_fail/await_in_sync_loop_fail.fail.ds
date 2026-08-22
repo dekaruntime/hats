@@ -1,6 +1,5 @@
 fn tick() {
-  let i = 0
-  while (i < 3) {
+  for (let i = 0; i < 3; i = i + 1) {
     await "x"
     i = i + 1
   }

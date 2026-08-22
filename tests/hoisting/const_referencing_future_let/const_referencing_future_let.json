@@ -2,5 +2,5 @@
   "title": "const initializer referencing a future let binding fails at runtime.",
   "stage": "parse",
   "notes": "",
-  "expectedDiagnosticContains": "not initialized until line"
+  "expectedDiagnosticContains": "`b` is used here but is not initialized until line 2"
 }

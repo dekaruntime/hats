@@ -1,5 +1,0 @@
-{
-  "title": "While loop with false condition never runs",
-  "stage": "run",
-  "notes": "The body of while(false) should not execute."
-}

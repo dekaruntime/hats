@@ -22,6 +22,9 @@
 /build
 /dist
 
+# generated monaco assets
+public/monaco-editor
+
 # misc
 .DS_Store
 *.pem

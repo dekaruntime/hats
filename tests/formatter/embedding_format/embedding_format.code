@@ -4,7 +4,7 @@ fn (p Person) greet(): string {
 }
 
 struct Employee {
-  embed Person;
+  Person;
   name: string;
 }
 

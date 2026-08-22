@@ -1,5 +1,5 @@
 {
-  "title": "Async method on struct fails at runtime",
+  "title": "Async method on struct works at runtime",
   "stage": "run",
-  "notes": "Async struct methods parse and typecheck but are not yet supported by the runtime."
+  "notes": "Async receiver methods on structs are supported."
 }

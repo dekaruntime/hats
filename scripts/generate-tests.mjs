@@ -854,15 +854,13 @@ match (x) {
   title: 'Match on a non-enum value fails',
 })
 
-add('flow_control', 'while_loop', {
+add('flow_control', 'for_loop', {
   status: 'pass',
-  source: `let i = 0
-while (i < 3) {
+  source: `for (let i = 0; i < 3; i = i + 1) {
   console.log(i)
-  i = i + 1
 }
 `,
-  title: 'While loop',
+  title: 'C-style for loop',
 })
 
 add('data_types', 'duplicate_struct_field_fail', {

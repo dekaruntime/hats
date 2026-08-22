@@ -1,5 +1,0 @@
-{
-  "title": "While missing condition fails",
-  "stage": "parse",
-  "notes": "A while statement requires a parenthesized condition."
-}

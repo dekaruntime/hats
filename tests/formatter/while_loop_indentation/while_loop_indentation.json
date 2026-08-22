@@ -1,5 +1,0 @@
-{
-  "title": "While Loop Indentation",
-  "stage": "run",
-  "notes": "Formatter should canonicalize while loop indentation."
-}

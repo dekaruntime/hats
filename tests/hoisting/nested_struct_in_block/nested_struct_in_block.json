@@ -2,5 +2,5 @@
   "title": "Nested struct inside bare block is rejected.",
   "stage": "parse",
   "notes": "",
-  "expectedDiagnosticContains": "only allowed at the top level"
+  "expectedDiagnosticContains": "struct declarations are only allowed at the top level in DekaScript"
 }

@@ -1,6 +1,5 @@
 {
-  "title": "Match on Result fails at runtime",
+  "title": "Match on Result with Ok and Err patterns",
   "stage": "run",
-  "expectedDiagnosticContains": "Ok is not defined",
-  "notes": "Result cases are not recognized as enum patterns."
+  "notes": "Bare Result enum variants are recognized as match patterns."
 }

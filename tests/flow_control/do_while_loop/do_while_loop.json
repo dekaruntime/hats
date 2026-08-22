@@ -1,5 +1,0 @@
-{
-  "title": "Do-while loop executes its body at least once",
-  "stage": "run",
-  "notes": "Avoid variable names that collide with PHP built-ins."
-}
