@@ -16,6 +16,7 @@ function slugMatches(slug) {
 }
 
 const compiler = await loadWasmCompiler()
+const skipped = []
 
 function readJson(testDir, name) {
   const p = path.join(testDir, `${name}.json`)
@@ -37,9 +38,27 @@ for (const category of loadAllTests()) {
 
     const testDir = path.join(testsDir, test.category, test.name)
     const baseName = test.name
+
+    // Use the entry the loader already resolved. Multi-file tests (the whole
+    // `modules` category) have an entry named main.pass.ds rather than
+    // <dirname>.pass.ds, so constructing the filename from the directory name
+    // is wrong for them -- and because this loop used to throw on the first
+    // such directory, every category sorting after `modules` (parser, types,
+    // unsafe, ...) was silently never regenerated. A stale fixture is worse
+    // than a loud failure, so this both resolves correctly and refuses to die
+    // on one bad directory.
     const ext = test.status === 'pass' ? 'pass.ds' : 'fail.ds'
-    const sourcePath = path.join(testDir, `${baseName}.${ext}`)
-    const source = fs.readFileSync(sourcePath, 'utf-8')
+    const sourcePath = test.entryPath
+      ? path.join(testDir, test.entryPath)
+      : path.join(testDir, `${baseName}.${ext}`)
+    let source
+    try {
+      source = fs.readFileSync(sourcePath, 'utf-8')
+    } catch (err) {
+      console.log(`[regen] ${test.slug}: SKIPPED, cannot read ${path.relative(testsDir, sourcePath)}`)
+      skipped.push(test.slug)
+      continue
+    }
 
     const compileResult = compileWithWasm(compiler, source, `${baseName}.ds`)
     const formatResult = formatDsWithWasm(compiler, source)
@@ -90,4 +109,8 @@ for (const category of loadAllTests()) {
 
     writeJson(testDir, baseName, meta)
   }
+}
+
+if (skipped.length > 0) {
+  console.log(`\n[regen] ${skipped.length} test(s) skipped: ${skipped.join(', ')}`)
 }
