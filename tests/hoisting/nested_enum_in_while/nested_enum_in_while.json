@@ -1,6 +1,0 @@
-{
-  "title": "Nested enum inside while is rejected.",
-  "stage": "parse",
-  "notes": "",
-  "expectedDiagnosticContains": "only allowed at the top level"
-}

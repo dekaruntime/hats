@@ -1,6 +1,5 @@
 const r = unsafe {
-  const u = new URL("https://example.com/path");
-  return u.href;
+  const u = new URL("https://example.com/path")
+  return u.href
 }
-console.log(r.__case)
-console.log(r.value)
+console.log(match (r) { Ok(v) => `ok: ${v}`, Err(e) => `err: ${e.message}` })

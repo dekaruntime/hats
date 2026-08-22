@@ -1,3 +1,2 @@
 const r = unsafe { JSON.parse("invalid json") }
-console.log(r.__case)
-console.log(r.error.message)
+console.log(match (r) { Ok(v) => `ok: ${v}`, Err(e) => `err: ${e.message}` })

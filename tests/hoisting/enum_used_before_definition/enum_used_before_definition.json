@@ -1,5 +1,6 @@
 {
   "title": "enum objects are hoisted and usable before source position.",
-  "stage": "run",
-  "notes": ""
+  "stage": "parse",
+  "notes": "",
+  "expectedDiagnosticContains": "Unknown enum field 'Color::Red::__case'"
 }

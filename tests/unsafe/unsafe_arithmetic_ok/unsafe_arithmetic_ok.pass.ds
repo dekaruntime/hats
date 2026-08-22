@@ -1,3 +1,2 @@
 const r = unsafe { 2 + 3 }
-console.log(r.__case)
-console.log(r.value)
+console.log(match (r) { Ok(v) => `ok: ${v}`, Err(e) => `err: ${e.message}` })

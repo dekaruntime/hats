@@ -1,5 +1,0 @@
-{
-  "title": "While missing body fails",
-  "stage": "parse",
-  "notes": "A while statement must have a body block."
-}

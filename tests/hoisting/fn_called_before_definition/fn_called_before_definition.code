@@ -1,0 +1,4 @@
+fn add(x: int, y: int): int {
+  return x + y
+}
+console.log(add(1, 2))

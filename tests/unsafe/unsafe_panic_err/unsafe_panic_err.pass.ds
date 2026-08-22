@@ -1,3 +1,2 @@
 const r = unsafe { deka.panic("boom") }
-console.log(r.__case)
-console.log(r.error.message)
+console.log(match (r) { Ok(v) => `ok: ${v}`, Err(e) => `err: ${e.message}` })

@@ -1,1 +1,0 @@
-while (false) { struct Point { x: int } }

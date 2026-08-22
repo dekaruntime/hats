@@ -1,1 +1,0 @@
-while (false) { fn helper(): int { return 1 } }

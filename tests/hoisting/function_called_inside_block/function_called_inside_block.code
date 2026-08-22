@@ -1,0 +1,6 @@
+fn helper(): int {
+  return 42
+}
+if (true) {
+  console.log(helper())
+}

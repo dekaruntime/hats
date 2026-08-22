@@ -1,3 +1,2 @@
 const r = unsafe { new URL("://invalid") }
-console.log(r.__case)
-console.log(r.error.message)
+console.log(match (r) { Ok(v) => `ok: ${v}`, Err(e) => `err: ${e.message}` })
