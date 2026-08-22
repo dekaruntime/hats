@@ -20,9 +20,9 @@ export interface BrowserRunResult {
 }
 
 let browser: Browser | null = null
-let page: Page | null = null
-let harnessReady = false
+let harnessBundlePath: string | null = null
 let browserUnavailableReason: string | null = null
+const EVALUATE_TIMEOUT_MS = 15_000
 
 function harnessPath(): string {
   return path.join(process.cwd(), '.cache', 'browser-harness.js')
@@ -33,15 +33,6 @@ export function getBrowserUnavailableReason(): string | null {
 }
 
 export async function closeBrowserHost(): Promise<void> {
-  harnessReady = false
-  if (page) {
-    try {
-      await page.close()
-    } catch {
-      // ignore
-    }
-    page = null
-  }
   if (browser) {
     try {
       await browser.close()
@@ -50,6 +41,17 @@ export async function closeBrowserHost(): Promise<void> {
     }
     browser = null
   }
+}
+
+function isInfraError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error)
+  return (
+    message.includes('Target closed') ||
+    message.includes('has been closed') ||
+    message.includes('Browser closed') ||
+    message.includes('Protocol error') ||
+    message.includes('Execution context was destroyed')
+  )
 }
 
 async function ensureHarnessBundle(): Promise<string> {
@@ -69,20 +71,12 @@ async function ensureHarnessBundle(): Promise<string> {
 
 export async function prepareBrowserHost(): Promise<boolean> {
   if (browserUnavailableReason) return false
-  if (harnessReady && page) return true
+  if (browser) return true
 
   try {
-    const bundle = await ensureHarnessBundle()
+    harnessBundlePath = await ensureHarnessBundle()
     const { chromium } = await import('playwright')
     browser = await chromium.launch({ headless: true })
-    const context = await browser.newContext()
-    page = await context.newPage()
-    await page.addScriptTag({ path: bundle })
-    const hasRunner = await page.evaluate(() => typeof (globalThis as { __dekaRunJs?: unknown }).__dekaRunJs === 'function')
-    if (!hasRunner) {
-      throw new Error('browser harness did not install __dekaRunJs')
-    }
-    harnessReady = true
     return true
   } catch (error) {
     browserUnavailableReason = error instanceof Error ? error.message : String(error)
@@ -92,8 +86,47 @@ export async function prepareBrowserHost(): Promise<boolean> {
   }
 }
 
+async function relaunchBrowser(): Promise<boolean> {
+  await closeBrowserHost()
+  browserUnavailableReason = null
+  return prepareBrowserHost()
+}
+
+type HarnessRun = {
+  ok: boolean
+  stdout: string
+  stderr: string
+  error?: string
+}
+
+async function evaluateInFreshPage(jsCode: string): Promise<HarnessRun> {
+  if (!browser || !harnessBundlePath) {
+    throw new Error(browserUnavailableReason ?? 'browser host not started')
+  }
+
+  const context = await browser.newContext()
+  context.setDefaultTimeout(EVALUATE_TIMEOUT_MS)
+  const page = await context.newPage()
+  try {
+    await page.addScriptTag({ path: harnessBundlePath })
+    return await page.evaluate(async (code: string) => {
+      const g = globalThis as unknown as {
+        __dekaRunJs: (js: string) => Promise<HarnessRun>
+        __dekaTerminate?: () => void
+      }
+      try {
+        return await g.__dekaRunJs(code)
+      } finally {
+        g.__dekaTerminate?.()
+      }
+    }, jsCode)
+  } finally {
+    await context.close()
+  }
+}
+
 export async function runCompiledJsInBrowser(jsCode: string): Promise<BrowserRunResult> {
-  if (!page) {
+  if (!browser) {
     return {
       ok: false,
       stage: 'run',
@@ -104,30 +137,35 @@ export async function runCompiledJsInBrowser(jsCode: string): Promise<BrowserRun
     }
   }
 
-  try {
-    const result = await page.evaluate(async (code: string) => {
-      const run = (
-        globalThis as unknown as {
-          __dekaRunJs: (js: string) => Promise<{
-            ok: boolean
-            stdout: string
-            stderr: string
-            error?: string
-          }>
-        }
-      ).__dekaRunJs
-      return await run(code)
-    }, jsCode)
+  const toResult = (result: HarnessRun): BrowserRunResult => ({
+    ok: result.ok,
+    stage: 'run',
+    stdout: result.stdout ?? '',
+    stderr: result.stderr ?? '',
+    error: result.ok ? undefined : result.error,
+    diagnostics: result.ok || !result.error ? [] : [{ severity: 'error', message: result.error }],
+  })
 
-    return {
-      ok: result.ok,
-      stage: 'run',
-      stdout: result.stdout ?? '',
-      stderr: result.stderr ?? '',
-      error: result.ok ? undefined : result.error,
-      diagnostics: result.ok || !result.error ? [] : [{ severity: 'error', message: result.error }],
-    }
+  try {
+    return toResult(await evaluateInFreshPage(jsCode))
   } catch (error) {
+    // Retry only closed-browser / protocol failures. A Deka program that
+    // returns ok:false is a fixture finding, never an infra retry.
+    if (isInfraError(error) && (await relaunchBrowser())) {
+      try {
+        return toResult(await evaluateInFreshPage(jsCode))
+      } catch (retryError) {
+        const message = retryError instanceof Error ? retryError.message : String(retryError)
+        return {
+          ok: false,
+          stage: 'run',
+          stdout: '',
+          stderr: '',
+          error: message,
+          diagnostics: [{ severity: 'error', message }],
+        }
+      }
+    }
     const message = error instanceof Error ? error.message : String(error)
     return {
       ok: false,
